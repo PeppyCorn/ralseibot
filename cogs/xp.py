@@ -41,7 +41,9 @@ class XP(commands.Cog):
 
         user = self.col.find_one({"_id": user_id})
 
-        # Se não existe no banco, cria estrutura completa
+        # ----------------------------
+        # CRIA NOVO USUÁRIO DO ZERO
+        # ----------------------------
         if user is None:
             user = {
                 "_id": user_id,
@@ -51,23 +53,63 @@ class XP(commands.Cog):
             }
             self.col.insert_one(user)
 
-        ### ========== XP GLOBAL ==========
-        if now - user.get("last_xp_global", 0) >= 10:
+        # ----------------------------
+        # ATUALIZA USUÁRIOS ANTIGOS
+        # (Migração automática)
+        # ----------------------------
+        updated = False
+
+        # Caso era o formato antigo: "xp"
+        if "xp_global" not in user:
+            user["xp_global"] = user.get("xp", 0)
+            updated = True
+
+        if "last_xp_global" not in user:
+            user["last_xp_global"] = user.get("last_xp", 0)
+            updated = True
+
+        if "xp_local" not in user:
+            user["xp_local"] = {}
+            updated = True
+
+        # Se algo foi alterado, salva no banco
+        if updated:
+            self.col.update_one(
+                {"_id": user_id},
+                {"$set": user}
+            )
+
+        # Atualiza variáveis após migração
+        xp_global = user["xp_global"]
+        last_global = user["last_xp_global"]
+        local_data = user["xp_local"]
+
+        # ============================
+        #   XP GLOBAL
+        # ============================
+        if now - last_global >= 10:
+            gained = random.randint(5, 15)
+            xp_global += gained
+
             self.col.update_one(
                 {"_id": user_id},
                 {"$set": {
-                    "xp_global": user["xp_global"] + random.randint(5, 15),
+                    "xp_global": xp_global,
                     "last_xp_global": now
                 }}
             )
 
-        ### ========== XP LOCAL ==========
-        local_data = user.get("xp_local", {})
+        # ============================
+        #   XP LOCAL POR SERVIDOR
+        # ============================
         local = local_data.get(guild_id, {"xp": 0, "last_xp": 0})
 
         if now - local["last_xp"] >= 10:
-            local["xp"] += random.randint(5, 15)
+            gained = random.randint(5, 15)
+            local["xp"] += gained
             local["last_xp"] = now
+
+            # salva no dict e depois no Mongo
             local_data[guild_id] = local
 
             self.col.update_one(
@@ -76,6 +118,7 @@ class XP(commands.Cog):
             )
 
         await self.bot.process_commands(message)
+
 
 
     # ------------------------------
