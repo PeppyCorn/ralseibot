@@ -35,40 +35,56 @@ class XP(commands.Cog):
         if message.author.bot:
             return
 
+        guild_id = str(message.guild.id)  # usado para XP local
         user_id = message.author.id
         now = time.time()
 
         user = self.col.find_one({"_id": user_id})
 
-        # Se não existe no banco, cria
+        # Se não existe no banco, cria estrutura completa
         if user is None:
-            self.col.insert_one({
+            user = {
                 "_id": user_id,
-                "xp": 0,
-                "last_xp": 0
-            })
-            user = {"xp": 0, "last_xp": 0}
+                "xp_global": 0,
+                "last_xp_global": 0,
+                "xp_local": {}
+            }
+            self.col.insert_one(user)
 
-        # Cooldown de 10s
-        if now - user["last_xp"] >= 10:
-            gained = random.randint(5, 15)
-
+        ### ========== XP GLOBAL ==========
+        if now - user.get("last_xp_global", 0) >= 10:
             self.col.update_one(
                 {"_id": user_id},
                 {"$set": {
-                    "xp": user["xp"] + gained,
-                    "last_xp": now
+                    "xp_global": user["xp_global"] + random.randint(5, 15),
+                    "last_xp_global": now
                 }}
             )
 
+        ### ========== XP LOCAL ==========
+        local_data = user.get("xp_local", {})
+        local = local_data.get(guild_id, {"xp": 0, "last_xp": 0})
+
+        if now - local["last_xp"] >= 10:
+            local["xp"] += random.randint(5, 15)
+            local["last_xp"] = now
+            local_data[guild_id] = local
+
+            self.col.update_one(
+                {"_id": user_id},
+                {"$set": {"xp_local": local_data}}
+            )
+
         await self.bot.process_commands(message)
+
 
     # ------------------------------
     # /xp — mostra XP do usuário
     # ------------------------------
     @app_commands.command(name="xp", description="Mostra seu XP atual e seu rank.")
     async def xp_command(self, interaction: discord.Interaction, user: discord.Member = None):
-        user = user or interaction.user
+        user = user or interaction
+        guild_id = str(interaction.guild.id)
 
         data = self.col.find_one({"_id": user.id})
 
@@ -76,14 +92,27 @@ class XP(commands.Cog):
             return await interaction.response.send_message(
                 f"{user.mention} ainda não possui XP registrado."
             )
+            
+        ### ===== GLOBAL =====
+        xp_global = data.get("xp_global", 0)
+        rank_global = self.col.count_documents({"xp_global": {"$gt": xp_global}}) + 1
 
-        xp_value = data["xp"]
-        rank = self.col.count_documents({"xp": {"$gt": xp_value}}) + 1
+        ### ===== LOCAL =====
+        local_data = data.get("xp_local", {})
+        xp_local = local_data.get(guild_id, {}).get("xp", 0)
+
+        # rank local (puxar apenas desse servidor!)
+        rank_local = self.col.count_documents({
+            f"xp_local.{guild_id}.xp": {"$gt": xp_local}
+        }) + 1
+
 
         await interaction.response.send_message(
             f"🏅 **{user.display_name}**\n"
-            f"🔸 XP: **{xp_value}**\n"
-            f"🔸 Rank: **#{rank}**"
+            f"🔸 XP Global: **{xp_global}**\n"
+            f"🔸 Rank Global: **#{rank_global}**"
+            f"🔸 XP Local: **{xp_local}**\n"
+            f"🔸 Rank Local: **#{rank_local}**"
         )
 
     # ------------------------------
