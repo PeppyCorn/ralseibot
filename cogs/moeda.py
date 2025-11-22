@@ -33,7 +33,7 @@ def setup(tree):
         embed = discord.Embed(
             title=f"💱 Cotação — {moeda.name}",
             description=f"Valor atual: **R${valor:.2f}**",
-            color=discord.Color.green() if variacao >= 0 else discord.Color.red()
+            color=discord.Color.red() if variacao >= 0 else discord.Color.green()
         )
 
         embed.add_field(name="🌡️ Variação (%)", value=f"{variacao:.2f}%")
