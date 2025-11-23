@@ -196,7 +196,7 @@ class XP(commands.Cog):
             desc += f"**#{pos} - {name}** - {xp} XP\n"
 
         embed = discord.Embed(
-            title="🌍 Ranking Global - Top 10",
+            title="🌎 Ranking Global - Top 10",
             description=desc,
             color=discord.Color.gold()
         )
