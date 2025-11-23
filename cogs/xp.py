@@ -8,6 +8,7 @@ import os
 
 
 class XP(commands.Cog):
+    rank_group = app_commands.Group(name="rank", description="Comandos de ranking de XP.")
     def __init__(self, bot):
         self.bot = bot
 
@@ -22,12 +23,11 @@ class XP(commands.Cog):
         self.col = self.db["users"]
 
         # Index para ranking (sem erro)
-        self.col.create_index("xp")
+        self.col.create_index("xp_global")
 
         print("Conectado ao MongoDB com sucesso!")
-
     # ------------------------------
-    # EVENTO: ganhar XP ao mandar mensagem
+    # Ganha XP ao mandar mensagem
     # ------------------------------
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -35,7 +35,7 @@ class XP(commands.Cog):
         if message.author.bot:
             return
 
-        guild_id = str(message.guild.id)  # usado para XP local
+        guild_id = str(message.guild.id)  
         user_id = message.author.id
         now = time.time()
 
@@ -52,11 +52,6 @@ class XP(commands.Cog):
                 "xp_local": {}
             }
             self.col.insert_one(user)
-
-        # ----------------------------
-        # ATUALIZA USUÁRIOS ANTIGOS
-        # (Migração automática)
-        # ----------------------------
         updated = False
 
         # Caso era o formato antigo: "xp"
@@ -150,7 +145,7 @@ class XP(commands.Cog):
         }) + 1
 
         embed = discord.Embed(
-            title=f"XP — {user.display_name}",
+            title=f"XP - {user.display_name}",
             color=discord.Color.blue()
         )
 
@@ -161,7 +156,7 @@ class XP(commands.Cog):
         )
 
         embed.add_field(
-            name="🏠 XP Local (do servidor)",
+            name=f"🏠 XP Local - {interaction.guild.name}",
             value=f"XP: **{xp_local}**\nRank local: **#{rank_local}**",
             inline=False
         )
@@ -170,21 +165,76 @@ class XP(commands.Cog):
 
 
     # ------------------------------
-    # /rank — top 10
+    # /rank global — top 10
     # ------------------------------
-    @app_commands.command(name="rank", description="Mostra o ranking global de XP.")
-    async def rank_command(self, interaction: discord.Interaction):
+    @rank_group.command(
+    name="global",
+    description="Mostra o ranking de XP global."
+    )
+    async def rank_global(self, interaction: discord.Interaction):
         top = list(self.col.find().sort("xp_global", -1).limit(10))
 
         if not top:
-            return await interaction.response.send_message("Ainda não há usuários com XP registrado.")
+            return await interaction.response.send_message(
+                "Ainda não há usuários com XP registrado."
+            )
 
-        description = ""
+        desc = ""
+
+        for pos, user in enumerate(top, start=1):
+            uid = user["_id"]
+            xp = user.get("xp_global", 0)
+
+            # nome
+            try:
+                discord_user = interaction.client.get_user(uid) or await interaction.client.fetch_user(uid)
+                name = discord_user.name
+            except:
+                name = f"Usuário desconhecido ({uid})"
+
+            desc += f"**#{pos} - {name}** - {xp} XP\n"
+
+        embed = discord.Embed(
+            title="🌍 Ranking Global - Top 10",
+            description=desc,
+            color=discord.Color.gold()
+        )
+
+        await interaction.response.send_message(embed=embed)
+        
+        
+    # ------------------------------
+    # /rank local — top 10
+    # ------------------------------
+        
+    @rank_group.command(
+        name="local",
+        description="Mostra o ranking de XP apenas deste servidor."
+    )
+    async def rank_local(self, interaction: discord.Interaction):
+
+        guild_id = str(interaction.guild.id)
+
+        cursor = self.col.find(
+            {f"xp_local.{guild_id}.xp": {"$exists": True}}
+        ).sort(
+            [(f"xp_local.{guild_id}.xp", -1)]
+        ).limit(10)
+
+        top = list(cursor)
+
+        if not top:
+            return await interaction.response.send_message(
+                "Ainda não há usuários com XP local neste servidor."
+            )
+
+        desc = ""
 
         for pos, user in enumerate(top, start=1):
             uid = user["_id"]
 
-            # Pega nome
+            xp = user.get("xp_local", {}).get(guild_id, {}).get("xp", 0)
+
             member = interaction.guild.get_member(uid)
 
             if member:
@@ -196,19 +246,17 @@ class XP(commands.Cog):
                 except:
                     name = f"Usuário desconhecido ({uid})"
 
-            xp_global = user.get("xp_global", 0)
-
-            description += f"**#{pos}** — {name} — **{xp_global} XP**\n"
+            desc += f"**#{pos} - {name}** - {xp} XP\n"
 
         embed = discord.Embed(
-            title="🌍 Ranking Global — Top 10",
-            description=description,
-            color=discord.Color.gold()
+            title=f"🏠 Ranking Local - {interaction.guild.name}",
+            description=desc,
+            color=discord.Color.green()
         )
-        
-        await interaction.response.send_message(embed=embed)
 
+        await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot):
     await bot.add_cog(XP(bot))
+    bot.tree.add_command(XP.rank_group)
