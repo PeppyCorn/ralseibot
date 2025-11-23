@@ -8,7 +8,6 @@ import os
 
 
 class XP(commands.Cog):
-    rank_group = app_commands.Group(name="rank", description="Comandos de ranking de XP.")
     def __init__(self, bot):
         self.bot = bot
 
@@ -26,6 +25,8 @@ class XP(commands.Cog):
         self.col.create_index("xp_global")
 
         print("Conectado ao MongoDB com sucesso!")
+        
+    rank_group = app_commands.Group(name="rank", description="Comandos de ranking de XP.")
     # ------------------------------
     # Ganha XP ao mandar mensagem
     # ------------------------------
