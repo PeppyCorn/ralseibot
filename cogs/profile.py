@@ -36,55 +36,84 @@ class Profile(commands.Cog):
         header = Image.new("RGBA", (900, 250), (170, 110, 255, 255))
         img.paste(header, (0, 0))
 
-        # Avatar
+        # ------------------------ AVATAR ------------------------
         avatar = await self.fetch_avatar(member)
-        avatar = avatar.resize((180, 180))
+        avatar_size = 170
+        avatar = avatar.resize((avatar_size, avatar_size))
 
-        mask = Image.new("L", (180, 180), 0)
-        draw_mask = ImageDraw.Draw(mask)
-        draw_mask.ellipse((0, 0, 180, 180), fill=255)
+        # Máscara circular
+        mask = Image.new("L", (avatar_size, avatar_size), 0)
+        ImageDraw.Draw(mask).ellipse((0, 0, avatar_size, avatar_size), fill=255)
 
-        border = Image.new("RGBA", (200, 200), (255, 255, 255, 255))
-        border_mask = Image.new("L", (200, 200), 0)
-        draw_bmask = ImageDraw.Draw(border_mask)
-        draw_bmask.ellipse((0, 0, 200, 200), fill=255)
+        # Borda
+        border_size = avatar_size + 20
+        border = Image.new("RGBA", (border_size, border_size), (255, 255, 255, 255))
+        border_mask = Image.new("L", (border_size, border_size), 0)
+        ImageDraw.Draw(border_mask).ellipse((0, 0, border_size, border_size), fill=255)
 
-        img.paste(border, (40, 70), border_mask)
-        img.paste(avatar, (50, 80), mask)
+        avatar_x = 40
+        avatar_y = 40
 
-        # Nome
-        draw.text((260, 140), member.name, font=font_big, fill=(0, 0, 0))
+        img.paste(border, (avatar_x, avatar_y), border_mask)
+        img.paste(avatar, (avatar_x + 10, avatar_y + 10), mask)
 
-        # Ralsei
+        # ------------------------ NOME ------------------------
+        name_x = avatar_x + border_size + 30
+        name_y = avatar_y + 60
+
+        draw.text((name_x, name_y), member.name, font=font_big, fill=(0, 0, 0))
+
+        # ------------------------ RALSEI ------------------------
         BASE = os.path.dirname(__file__)
         ralsei_path = os.path.join(BASE, "ralsei.png")
 
         ralsei = Image.open(ralsei_path).convert("RGBA")
+        ralsei = ralsei.resize((250, 250))
 
-        ralsei = ralsei.resize((300, 300))
-        img.paste(ralsei, (560, 0), ralsei)
+        ralsei_x = 900 - 270  # alinhado à direita
+        ralsei_y = 10         # alinhado ao topo do header
 
-        # Caixa de sobre mim
-        about_box = Image.new("RGBA", (700, 130), (255, 255, 255, 255))
-        img.paste(about_box, (100, 260), about_box)
+        img.paste(ralsei, (ralsei_x, ralsei_y), ralsei)
 
-        draw.text((120, 300), data.get("about", "Insira um SOBRE MIM aqui :3"), font=font_small, fill=(0, 0, 0))
+        # ------------------------ CAIXA SOBRE MIM ------------------------
+        about_x = 60
+        about_y = avatar_y + border_size + 30
+        about_w = 780
+        about_h = 140
 
-        # Barra XP
-        draw.text((100, 410), "Progresso de XP", font=font_small, fill=(0, 0, 0))
+        about_box = Image.new("RGBA", (about_w, about_h), (255, 255, 255, 255))
+        img.paste(about_box, (about_x, about_y), about_box)
 
-        draw.rectangle((100, 450, 800, 470), fill=(230, 230, 230))
-        
+        draw.text(
+            (about_x + 20, about_y + 40),
+            data.get("about", "Insira um SOBRE MIM aqui :3"),
+            font=font_small,
+            fill=(0, 0, 0)
+        )
+
+        # ------------------------ BARRA DE XP ------------------------
+        bar_label_x = 60
+        bar_label_y = about_y + about_h + 20
+        draw.text((bar_label_x, bar_label_y), "Progresso de XP", font=font_small, fill=(0, 0, 0))
+
+        bar_x = 60
+        bar_y = bar_label_y + 40
+        bar_w = 780
+        bar_h = 25
+
+        # fundo da barra
+        draw.rectangle((bar_x, bar_y, bar_x + bar_w, bar_y + bar_h), fill=(220, 220, 220))
+
+        # progresso real
         xp = data.get("xp_global", 0)
         level = xp // 1000
-        xp_next = (level + 1) * 100
+        xp_next = (level + 1) * 1000
         ratio = xp / xp_next
-        bar_width = int(700 * ratio)
+        progress_w = int(bar_w * ratio)
 
+        draw.rectangle((bar_x, bar_y, bar_x + progress_w, bar_y + bar_h), fill=(100, 230, 100))
 
-        draw.rectangle((100, 450, 100 + bar_width, 470), fill=(100, 230, 100))
-
-        # Exportar
+        # ------------------------ EXPORTAR ------------------------
         buffer = BytesIO()
         img.save(buffer, format="PNG")
         buffer.seek(0)
