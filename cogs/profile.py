@@ -28,6 +28,11 @@ class Profile(commands.Cog):
 
         img = Image.new("RGBA", (600, 300), (45, 45, 45, 255))
         draw = ImageDraw.Draw(img)
+        
+        mask = Image.new("L", (220, 220), 0)
+        mask_draw = ImageDraw.Draw(mask)
+        mask_draw.ellipse((0, 0, 220, 220), fill=255)
+        img.paste(avatar, (40, 90), mask)
 
         buffer = BytesIO()
         img.save(buffer, format="PNG")
