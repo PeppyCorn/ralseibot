@@ -1,13 +1,9 @@
-# =====================
-# === main.py
-# =====================
 import os
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 from cogs.moeda import setup as economia_setup
 
-# Carrega variáveis do .env (local). No Railway, variáveis já existem no ambiente.
 load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
@@ -20,7 +16,7 @@ intents.members = True
 
 bot = commands.Bot(command_prefix=COMMAND_PREFIX, intents=intents)
 
-# Garante pasta "data"
+# Criar pasta data
 os.makedirs(DATA_DIR, exist_ok=True)
 
 COGS = [
@@ -31,11 +27,7 @@ COGS = [
     "cogs.help_menu",
 ]
 
-@bot.event
-async def on_ready():
-    print(f"Bot online como {bot.user} :3 (ID: {bot.user.id})")
-
-    # Carregar cogs normais
+async def load_all_extensions():
     for cog in COGS:
         try:
             await bot.load_extension(cog)
@@ -43,27 +35,32 @@ async def on_ready():
         except Exception as e:
             print(f"Falha ao carregar {cog}: {e}")
 
-    # Carregar comandos da pasta economia (moeda)
+@bot.event
+async def on_ready():
+    print(f"Bot online como {bot.user} :3 (ID: {bot.user.id})")
+
+@bot.event
+async def setup_hook():
+    await load_all_extensions()
+
+    # Carregar comandos da economia
     try:
-        economia_setup(bot.tree)  # <-- AQUI ESTÁ CORRETO
-        print("Comandos de economia carregados!")
+        economia_setup(bot.tree)
     except Exception as e:
-        print("Erro ao carregar comandos de economia:", e)
+        print("Erro economia:", e)
 
     # Sincronizar slash commands
     try:
         await bot.tree.sync()
         print("Slash commands sincronizados!")
     except Exception as e:
-        print("Erro ao sincronizar slash commands:", e)
+        print("Erro ao sincronizar:", e)
 
 @bot.event
 async def on_message(message):
     if message.author.bot:
         return
-
     await bot.process_commands(message)
-
 
 if __name__ == "__main__":
     bot.run(TOKEN)
