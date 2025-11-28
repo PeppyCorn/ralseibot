@@ -31,8 +31,8 @@ class Profile(commands.Cog):
         if not data:
             return await interaction.response.send_message("Você ainda não possui XP registrado.")
 
-        WIDTH = 900
-        HEIGHT = 500
+        WIDTH = 931
+        HEIGHT = 465
         
         # Fundo com imagem externa
         BASE = os.path.dirname(__file__)
@@ -47,54 +47,58 @@ class Profile(commands.Cog):
 
         # Fonte
         font_big = ImageFont.truetype("arial.ttf", 32)
-        font_small = ImageFont.truetype("arial.ttf", 26)
+        font_small = ImageFont.truetype("arial.ttf", 18)
         
         draw = ImageDraw.Draw(img)
         
         # --------------------- AVATAR ---------------------
         avatar = await self.fetch_avatar(member)
-        avatar_size = 150
+        avatar_size = 142
         avatar = avatar.resize((avatar_size, avatar_size))
 
         # Máscara circular
         mask = Image.new("L", (avatar_size, avatar_size), 0)
         ImageDraw.Draw(mask).ellipse((0, 0, avatar_size, avatar_size), fill=255)
 
-        avatar_x = 40
-        avatar_y = 170
+        avatar_x = 45
+        avatar_y = 161
         
         img.paste(avatar, (avatar_x, avatar_y), mask)
 
         # --------------------- NOME ---------------------
-        name_x = avatar_x + 30
-        name_y = avatar_y + 40
+        name_x = avatar_x + 150
+        name_y = avatar_y + 20
 
         draw.text((name_x, name_y), member.name, font=font_big, fill=(0, 0, 0))
 
         # --------------------- SOBRE MIM ---------------------
 
-        about_x = 230
-        about_y = 80      
+        about_x = 238
+        about_y = 260      
 
         draw.text(
             (about_x + 25, about_y + 40),
-            data.get("about", "Insira um SOBRE MIM por aqui :3"),
+            data.get("about", "Insira um SOBRE MIM :3"),
             font=font_small,
             fill=(0, 0, 0)
         )
 
         # --------------------- BARRA XP ---------------------
-        bar_label_x = 60
-        bar_label_y = about_y + 70
-        draw.text((bar_label_x, bar_label_y), "Progresso de XP", font=font_small, fill=(0, 0, 0))
+        bar_label_y = about_y + 120
 
-        bar_x = 60
+        bar_x = 220
         bar_y = bar_label_y + 35
-        bar_w = 700
-        bar_h = 22
+        bar_w = 500
+        bar_h = 15
 
+        radius = 12
+        
         # fundo da barra
-        draw.rectangle((bar_x, bar_y, bar_x + bar_w, bar_y + bar_h), fill=(220, 220, 220))
+        draw.rounded_rectangle(
+            (bar_x, bar_y, bar_x + bar_w, bar_y + bar_h),
+            radius=radius,
+            fill=(255, 255, 255)
+        )
 
         # progresso
         xp = data.get("xp_global", 0)
@@ -105,7 +109,25 @@ class Profile(commands.Cog):
 
         progress_w = int(bar_w * ratio)
 
-        draw.rectangle((bar_x, bar_y, bar_x + progress_w, bar_y + bar_h), fill=(100, 230, 100))
+        draw.rounded_rectangle(
+            (bar_x, bar_y, bar_x + progress_w, bar_y + bar_h),
+            radius=radius,
+            fill=(100, 230, 100)
+        )
+
+        # --------------------- TEXTO DO XP ---------------------
+        xp_text = f"{xp_current}/{xp_next} • Nível {level}"
+
+        text_x = bar_x + bar_w // 2
+        text_y = bar_y + bar_h + 10
+
+        bbox = draw.textbbox((0, 0), xp_text, font=font_small)
+        w = bbox[2] - bbox[0]
+        h = bbox[3] - bbox[1]
+
+        # Centraliza
+        draw.text((text_x - w // 2, text_y), xp_text, font=font_small, fill=(0, 0, 0))
+
 
         # --------------------- EXPORTAR ---------------------
         buffer = BytesIO()
