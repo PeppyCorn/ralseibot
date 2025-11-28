@@ -38,6 +38,7 @@ except Exception as e:
 COGS = [
     "cogs.xp",
     "cogs.profile",
+    "cogs.8ball",
     "cogs.tickets",
     "cogs.fun",
     "cogs.help_menu",
