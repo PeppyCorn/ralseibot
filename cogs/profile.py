@@ -73,8 +73,8 @@ class Profile(commands.Cog):
 
         # --------------------- SOBRE MIM ---------------------
 
-        about_x = 238
-        about_y = 260      
+        about_x = 242
+        about_y = 240      
 
         draw.text(
             (about_x + 25, about_y + 40),
@@ -86,9 +86,9 @@ class Profile(commands.Cog):
         # --------------------- BARRA XP ---------------------
         bar_label_y = about_y + 120
 
-        bar_x = 220
-        bar_y = bar_label_y + 35
-        bar_w = 500
+        bar_x = 260
+        bar_y = bar_label_y + 55
+        bar_w = 400
         bar_h = 15
 
         radius = 12

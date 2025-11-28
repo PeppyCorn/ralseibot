@@ -84,7 +84,7 @@ async def on_message(message):
 @bot.event
 async def on_command_error(ctx, error):
     if hasattr(ctx.cog, "on_command_error"):
-        return  # evita duplicação
+        return
     print("Erro tratado (main)", error)
 
 
