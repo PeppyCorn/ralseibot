@@ -102,7 +102,7 @@ class RockPaperScissors(commands.Cog):
 
         await interaction.followup.send(
             f"{interaction.user.mention} desafiou {oponente.mention} para uma aposta de **{quantidade} ralcoins**!\n"
-            f"🏦 Taxa do bot: **0.5%** sobre o valor ganho\n\n"
+            f"🏦 Taxa do bot: **5%** sobre o valor ganho\n\n"
             "🪨 📄 ✂ Escolha sua jogada!",
             view=view
         )
