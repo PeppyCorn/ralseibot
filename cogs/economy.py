@@ -59,7 +59,7 @@ class Economy(commands.Cog):
         )
         
         # ------------------ RANK GLOBAL ------------------
-    @app_commands.command(name="rankcoins", description="Top 10 mais ricos do bot")
+    @app_commands.command(name="rankcoins", description="Top 5 mais ricos do bot")
     async def rank(self, interaction: discord.Interaction):
 
         # busca top 5 ordenado por coins
@@ -91,7 +91,7 @@ class Economy(commands.Cog):
             elif i == 3:
                 medal = "🥉"
 
-            description += f"**{i}. {medal} {name}** — {coins} ralcoins\n"
+            description += f"**{i}. {medal} {name}** ➜ {coins} ralcoins\n"
 
         embed = discord.Embed(
             title="🏆 Rank Global de Ralcoins",
