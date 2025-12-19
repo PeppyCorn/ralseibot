@@ -183,9 +183,9 @@ class RockPaperScissors(commands.Cog):
             )
 
             if winner is None:
-                text += "➡️ **Empate!** Ninguém perde ralcoins!"
+                text += "\n➡️ **Empate!** Ninguém perde ralcoins!"
             elif winner == "A":
-                text += (f"🎉 {userA.mention} **venceu** e ganhou **{reward} ralcoins**!\n🏦 Taxa do bot (5%): **{tax} ralcoins**\n")
+                text += (f"\n🎉 {userA.mention} **venceu** e ganhou **{reward} ralcoins**!\n🏦 Taxa do bot (5%): **{tax} ralcoins**\n")
                 db.update_one({"_id": userA.id}, {"$inc": {"coins": reward}})
                 db.update_one({"_id": userB.id}, {"$inc": {"coins": -amount}})
                 db.update_one(
@@ -194,7 +194,7 @@ class RockPaperScissors(commands.Cog):
                 )
 
             else:
-                text += (f"🎉 {userB.mention} **venceu** e ganhou **{reward} ralcoins**!\n🏦 Taxa do bot (5%): **{tax} ralcoins**\n")
+                text += (f"\n🎉 {userB.mention} **venceu** e ganhou **{reward} ralcoins**!\n🏦 Taxa do bot (5%): **{tax} ralcoins**\n")
                 db.update_one({"_id": userB.id}, {"$inc": {"coins": reward}})
                 db.update_one({"_id": userA.id}, {"$inc": {"coins": -amount}})
                 db.update_one(

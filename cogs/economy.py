@@ -64,7 +64,7 @@ class Economy(commands.Cog):
             name = user.display_name
         elif user.bot:
             user_id = BOT_ECONOMY_ID
-            name = "Banco do Bot"
+            name = "Banco do Ralsei"
         else:
             user_id = user.id
             name = user.display_name
