@@ -4,15 +4,20 @@ from discord.ext import commands
 from datetime import datetime, timedelta, timezone
 import random
 
-
 BR_TZ = timezone(timedelta(hours=-3))
 
+BOT_ECONOMY_ID = 0
 
 class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.col = bot.get_cog("XP").col
-
+        
+        self.col.update_one(
+            {"_id": BOT_ECONOMY_ID},
+            {"$setOnInsert": {"coins": 0}},
+            upsert=True
+        )
 
     # ------------------ DAILY ------------------
     @app_commands.command(name="daily", description="Colete suas moedas diárias")

@@ -5,6 +5,8 @@ import random
 
 TAX_RATE = 0.05  # Taxa de 5% 
 
+BOT_ECONOMY_ID = 0
+
 class RPSView(discord.ui.View):
     def __init__(self, cog, game_id):
         super().__init__(timeout=60)
@@ -173,8 +175,6 @@ class RockPaperScissors(commands.Cog):
             reward = amount - tax
             userA = game["userA"]
             userB = game["userB"]
-            
-            
 
             text = (
                 f"🪨📄✂ **Resultado!**\n"
@@ -188,11 +188,19 @@ class RockPaperScissors(commands.Cog):
                 text += (f"🎉 {userA.mention} **venceu** e ganhou **{reward} ralcoins**!\n🏦 Taxa do bot (5%): **{tax} ralcoins**\n")
                 db.update_one({"_id": userA.id}, {"$inc": {"coins": reward}})
                 db.update_one({"_id": userB.id}, {"$inc": {"coins": -amount}})
+                db.update_one(
+                    {"_id": BOT_ECONOMY_ID},
+                    {"$inc": {"coins": tax}}
+                )
 
             else:
                 text += (f"🎉 {userB.mention} **venceu** e ganhou **{reward} ralcoins**!\n🏦 Taxa do bot (5%): **{tax} ralcoins**\n")
                 db.update_one({"_id": userB.id}, {"$inc": {"coins": reward}})
                 db.update_one({"_id": userA.id}, {"$inc": {"coins": -amount}})
+                db.update_one(
+                    {"_id": BOT_ECONOMY_ID},
+                    {"$inc": {"coins": tax}}
+                )
 
 
             del self.ongoing_games[game_id]
