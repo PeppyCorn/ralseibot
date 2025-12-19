@@ -108,7 +108,7 @@ class RockPaperScissors(commands.Cog):
             else:
                 text += f"🎉 {userB.mention} venceu e ganhou **{amount} moedas**!"
                 db.update_one({"_id": userB.id}, {"$inc": {"coins": amount}})
-                db.update_one({"_id": userA.id}, {"$inc": {"coins": -amount})
+                db.update_one({"_id": userA.id}, {"$inc": {"coins": -amount}})
 
             del self.ongoing_games[game_id]
             await interaction.followup.send(text)
