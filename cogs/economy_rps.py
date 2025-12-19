@@ -3,6 +3,8 @@ from discord import app_commands
 from discord.ext import commands
 import random
 
+TAX_RATE = 0.005  # 0.5%
+
 class RockPaperScissors(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -32,6 +34,14 @@ class RockPaperScissors(commands.Cog):
         db = self.bot.get_cog("XP").col
         user_data = db.find_one({"_id": interaction.user.id}) or {}
         opp_data = db.find_one({"_id": oponente.id}) or {}
+
+        MIN_BET = 100
+
+        if quantidade < MIN_BET:
+            return await interaction.response.send_message(
+                f"❌ A aposta mínima é de **{MIN_BET} ralcoins**!",
+                ephemeral=True
+            )
 
         if user_data.get("coins", 0) < quantidade:
             return await interaction.response.send_message("Você não tem ralcoins suficientes!", ephemeral=True)
@@ -69,9 +79,11 @@ class RockPaperScissors(commands.Cog):
 
         await interaction.response.send_message(
             f"{interaction.user.mention} desafiou {oponente.mention} para uma aposta de **{quantidade} ralcoins**!\n"
+            f"🏦 Taxa do bot: **0.5%** sobre o valor ganho\n\n"
             "🪨 📄 ✂ Escolha sua jogada!",
             view=view
         )
+
 
     @commands.Cog.listener()
     async def on_interaction(self, interaction: discord.Interaction):
@@ -127,8 +139,12 @@ class RockPaperScissors(commands.Cog):
             winner = self.get_winner(game["A"], game["B"])
             db = self.bot.get_cog("XP").col
             amount = game["amount"]
+            tax = int(amount * TAX_RATE)
+            reward = amount - tax
             userA = game["userA"]
             userB = game["userB"]
+            
+            
 
             text = (
                 f"🪨📄✂ **Resultado!**\n"
@@ -139,13 +155,15 @@ class RockPaperScissors(commands.Cog):
             if winner is None:
                 text += "➡️ **Empate!** Ninguém perde ralcoins!"
             elif winner == "A":
-                text += f"🎉 {userA.mention} **venceu** e ganhou **{amount} ralcoins**!"
-                db.update_one({"_id": userA.id}, {"$inc": {"coins": amount}})
+                text += (f"🎉 {userA.mention} **venceu** e ganhou **{reward} ralcoins**!\n🏦 Taxa do bot (0.5%): **{tax} ralcoins**\n")
+                db.update_one({"_id": userA.id}, {"$inc": {"coins": reward}})
                 db.update_one({"_id": userB.id}, {"$inc": {"coins": -amount}})
+
             else:
-                text += f"🎉 {userB.mention} **venceu** e ganhou **{amount} ralcoins**!"
-                db.update_one({"_id": userB.id}, {"$inc": {"coins": amount}})
+                text += (f"🎉 {userB.mention} **venceu** e ganhou **{reward} ralcoins**!\n🏦 Taxa do bot (0.5%): **{tax} ralcoins**\n")
+                db.update_one({"_id": userB.id}, {"$inc": {"coins": reward}})
                 db.update_one({"_id": userA.id}, {"$inc": {"coins": -amount}})
+
 
             del self.ongoing_games[game_id]
             await interaction.followup.send(text)
