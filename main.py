@@ -40,6 +40,7 @@ COGS = [
     "cogs.profile",
     "cogs.8ball",
     "cogs.economy",
+    "cogs.economy_rps"
     "cogs.avatar",
     "cogs.tickets",
     "cogs.fun",
