@@ -3,7 +3,29 @@ from discord import app_commands
 from discord.ext import commands
 import random
 
-TAX_RATE = 0.05  # 0.5%
+TAX_RATE = 0.05  # Taxa de 5% 
+
+class RPSView(discord.ui.View):
+    def __init__(self, cog, game_id):
+        super().__init__(timeout=60)
+        self.cog = cog
+        self.game_id = game_id
+
+    async def on_timeout(self):
+        game = self.cog.ongoing_games.get(self.game_id)
+        if not game:
+            return
+
+        userA = game["userA"]
+        userB = game["userB"]
+
+        await game["channel"].send(
+            f"⏰ **Tempo esgotado!**\n"
+            f"{userA.mention} ou {userB.mention} não respondeu a tempo.\n"
+            "A partida foi cancelada."
+        )
+
+        del self.cog.ongoing_games[self.game_id]
 
 class RockPaperScissors(commands.Cog):
     def __init__(self, bot):
@@ -61,7 +83,7 @@ class RockPaperScissors(commands.Cog):
             "amount": quantidade
         }
 
-        view = discord.ui.View(timeout=60)
+        view = RPSView(self, game_id)
 
         choices = {
             "🪨": "pedra",
