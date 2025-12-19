@@ -1,6 +1,7 @@
 import os
 import discord
-from discord.ext import commands
+import random
+from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from cogs.moeda import setup as economia_setup
@@ -60,6 +61,8 @@ async def load_all_extensions():
 # ================================
 @bot.event
 async def on_ready():
+    if not status_task.is_running():
+        status_task.start()
     print(f"Bot online como {bot.user} :3 (ID: {bot.user.id})")
 
 @bot.event
@@ -90,7 +93,27 @@ async def on_command_error(ctx, error):
     if hasattr(ctx.cog, "on_command_error"):
         return
     print("Erro tratado (main)", error)
+    
+from discord.ext import tasks
 
+@tasks.loop(seconds=30)
+async def status_task():
+    guilds = len(bot.guilds)
+    users = len(set(bot.get_all_members()))
+
+    statuses = [
+        discord.Game(name="DELTARUNE"),
+        discord.Game(name=f"em {guilds} servidores"),
+        discord.Activity(
+            type=discord.ActivityType.watching,
+            name=f"{users} pessoas"
+        )
+    ]
+
+    await bot.change_presence(
+        status=discord.Status.online,
+        activity=random.choice(statuses)
+    )
 
 if __name__ == "__main__":
     bot.run(TOKEN)
