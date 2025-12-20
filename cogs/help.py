@@ -27,7 +27,7 @@ class Help(commands.Cog):
         embed.add_field(
             name="👤 Perfil",
             value=(
-                "`/profile` — Veja seu perfil\n"
+                "`/perfil` — Veja seu perfil\n"
                 "`/avatar` — Avatar de um usuário"
             ),
             inline=False
