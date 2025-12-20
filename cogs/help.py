@@ -10,7 +10,7 @@ class Help(commands.Cog):
     async def help(self, interaction: discord.Interaction):
 
         embed = discord.Embed(
-            title="🌟 Ralsei Bot — Central de Ajuda",
+            title="🌟 Ralsei Bot - Central de Ajuda",
             description="Aqui estão todos os comandos disponíveis:",
             color=discord.Color.green()
         )
