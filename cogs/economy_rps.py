@@ -136,7 +136,7 @@ class RockPaperScissors(commands.Cog):
         _, game_id, choice = parts
 
         if game_id not in self.ongoing_games:
-            return await interaction.followup.send(
+            return await interaction.response.send_message(
                 "Partida expirada ou inválida!",
                 ephemeral=True
             )
