@@ -367,6 +367,15 @@ class XP(commands.Cog):
             f"🔔 DM de level **{'ativada' if enabled else 'desativada'}**!",
             ephemeral=True
         )
+        
+    @app_commands.command(name="addxp")
+    async def addxp(self, interaction: discord.Interaction, amount: int):
+        self.col.update_one(
+            {"_id": interaction.user.id},
+            {"$inc": {"xp_global": amount}},
+            upsert=True
+        )
+        await interaction.response.send_message(f"XP aumentado em {amount}")
 
 async def setup(bot):
     await bot.add_cog(XP(bot))
