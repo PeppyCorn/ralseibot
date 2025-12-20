@@ -264,22 +264,24 @@ class XP(commands.Cog):
     async def add_xp(self, user: discord.Member, amount: int):
         col = self.col
 
-        data = col.find_one({"_id": user.id}) or {"xp": 0, "coins": 0}
+        data = col.find_one({"_id": user.id}) or {
+            "xp_global": 0,
+            "coins": 0,
+            "dm_level": True
+        }
 
-        old_xp = data.get("xp", 0)
+        old_xp = data.get("xp_global", 0)
         old_level = old_xp // XP_PER_LEVEL
 
-        # adiciona XP
         new_xp = old_xp + amount
         new_level = new_xp // XP_PER_LEVEL
 
         col.update_one(
             {"_id": user.id},
-            {"$set": {"xp": new_xp}},
+            {"$set": {"xp_global": new_xp}},
             upsert=True
         )
 
-        # subiu de nível?
         if new_level > old_level:
             levels_gained = new_level - old_level
             reward = LEVEL_REWARD * levels_gained
@@ -289,10 +291,9 @@ class XP(commands.Cog):
                 {"$inc": {"coins": reward}}
             )
 
-            dm_enabled = data.get("dm_level", True)
-
-            if dm_enabled:
+            if data.get("dm_level", True):
                 await self.send_level_up_dm(user, new_level, reward)
+
 
 
 
