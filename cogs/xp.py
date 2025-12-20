@@ -6,6 +6,9 @@ import random
 import time
 import os
 
+XP_PER_LEVEL = 1000
+LEVEL_REWARD = 5000
+
 
 class XP(commands.Cog):
     def __init__(self, bot):
@@ -256,6 +259,118 @@ class XP(commands.Cog):
         )
 
         await interaction.response.send_message(embed=embed)
+
+
+    async def add_xp(self, user: discord.Member, amount: int):
+        col = self.col
+
+        data = col.find_one({"_id": user.id}) or {"xp": 0, "coins": 0}
+
+        old_xp = data.get("xp", 0)
+        old_level = old_xp // XP_PER_LEVEL
+
+        # adiciona XP
+        new_xp = old_xp + amount
+        new_level = new_xp // XP_PER_LEVEL
+
+        col.update_one(
+            {"_id": user.id},
+            {"$set": {"xp": new_xp}},
+            upsert=True
+        )
+
+        # subiu de nível?
+        if new_level > old_level:
+            levels_gained = new_level - old_level
+            reward = LEVEL_REWARD * levels_gained
+
+            col.update_one(
+                {"_id": user.id},
+                {"$inc": {"coins": reward}}
+            )
+
+            dm_enabled = data.get("dm_level", True)
+
+            if dm_enabled:
+                await self.send_level_up_dm(user, new_level, reward)
+
+
+
+    def get_xp_rank(self, user_id: int):
+        users = list(
+            self.col.find().sort("xp", -1)
+        )
+
+        for i, u in enumerate(users, start=1):
+            if u["_id"] == user_id:
+                return i
+
+        return None
+
+    def get_coin_rank(self, user_id: int):
+        users = list(
+            self.col.find().sort("coins", -1)
+        )
+
+        for i, u in enumerate(users, start=1):
+            if u["_id"] == user_id:
+                return i
+
+        return None
+
+    async def send_level_up_dm(self, user: discord.Member, level: int, reward: int):
+        xp_rank = self.get_xp_rank(user.id)
+        coin_rank = self.get_coin_rank(user.id)
+
+        embed = discord.Embed(
+            title="🎉 Você subiu de nível!",
+            description=(
+                f"✨ **Novo nível:** {level}\n"
+                f"💰 **Recompensa:** {reward} ralcoins\n\n"
+                f"🏆 **Rank de XP:** #{xp_rank}\n"
+                f"🏦 **Rank de Saldo:** #{coin_rank}\n\n"
+                "🔕 Não quer receber essa DM?\n"
+                "Use `/leveldm off`"
+            ),
+            color=discord.Color.gold()
+        )
+
+        embed.set_footer(text="Continue interagindo para ganhar mais recompensas!")
+
+        try:
+            await user.send(embed=embed)
+        except discord.Forbidden:
+            pass  # usuário com DM fechada
+        
+        
+    @app_commands.command(name="leveldm", description="Ativar ou desativar DM ao subir de nível")
+    @app_commands.describe(estado="on para ativar, off para desativar")
+    async def leveldm(
+        self,
+        interaction: discord.Interaction,
+        estado: str
+    ):
+        estado = estado.lower()
+
+        if estado not in ("on", "off"):
+            return await interaction.response.send_message(
+                "❌ Use `on` ou `off`.",
+                ephemeral=True
+            )
+
+        value = estado == "on"
+
+        self.col.update_one(
+            {"_id": interaction.user.id},
+            {"$set": {"dm_level": value}},
+            upsert=True
+        )
+
+        await interaction.response.send_message(
+            f"🔔 DM de level **{'ativada' if value else 'desativada'}**!",
+            ephemeral=True
+        )
+
 
 
 async def setup(bot):
