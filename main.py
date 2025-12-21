@@ -43,6 +43,7 @@ COGS = [
     "cogs.economy",
     "cogs.economy_rps",
     "cogs.avatar",
+    "cogs.challenges",
     "cogs.tickets",
     "cogs.fun",
     "cogs.help",
