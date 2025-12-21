@@ -176,8 +176,11 @@ class Challenges(commands.Cog):
 
         self.active_challenges[guild.id] = {
             "answer": challenge["answer"],
-            "spawned_at": time.time()
+            "spawned_at": time.time(),
+            "token_positions": challenge.get("token_positions"),
+            "solved": False
         }
+
 
         embed = discord.Embed(
             title="🧠 Desafio!",
@@ -197,8 +200,18 @@ class Challenges(commands.Cog):
             return
 
         answer = challenge["answer"]
+        
+        if challenge.get("token_positions"):
+            if is_paste_detected(answer, message.content, challenge["token_positions"]):
+                return  # ignorar resposta colada
+
 
         if normalize(message.content) == normalize(answer):
+            if challenge["solved"]:
+                return
+
+            challenge["solved"] = True
+
             await message.add_reaction("✅")
 
             self.col.update_one(
@@ -213,6 +226,7 @@ class Challenges(commands.Cog):
             )
 
             self.active_challenges.pop(guild_id, None)
+
 
 
     # ------------- GENERATE CHALLENGE -------------
@@ -240,23 +254,26 @@ class Challenges(commands.Cog):
             ]
 
             phrase = random.choice(phrases)
-            disguised = add_invisible_chars(phrase)
+            disguised, token_positions = add_invisible_chars(phrase)
 
             return {
                 "question": f"Reescreva a frase exatamente:\n`{disguised}`",
-                "answer": phrase
+                "answer": phrase,
+                "token_positions": token_positions
             }
 
 def add_invisible_chars(text: str):
     ZERO_WIDTH = "\u200b"
+    token_positions = set()
     result = ""
 
-    for char in text:
+    for i, char in enumerate(text):
         result += char
         if char != " " and random.random() < 0.15:
             result += ZERO_WIDTH
+            token_positions.add(i)
 
-    return result
+    return result, token_positions
 
 def normalize(text: str) -> str:
     return (
@@ -264,6 +281,13 @@ def normalize(text: str) -> str:
         .replace("\u200b", "")
         .strip()
     )
+    
+def is_paste_detected(original, user_input, token_positions):
+    for i in token_positions:
+        if i < len(user_input) and user_input[i] == "\u200b":
+            return True
+    return False
+
 
 async def setup(bot):
     await bot.add_cog(Challenges(bot))
