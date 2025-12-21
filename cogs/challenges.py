@@ -298,6 +298,7 @@ class Challenges(commands.Cog):
                 "Ralsei é muito fofu",
                 "Dois passos para frente, três passos para trás!",
                 "Sua mão é fria como a neve e a minha queima como fogo",
+                "Ralsei é meu sonho de consumo",
             ]
 
             phrase = random.choice(phrases)
