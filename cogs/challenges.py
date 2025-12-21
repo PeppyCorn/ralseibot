@@ -8,6 +8,7 @@ import time
 DEFAULT_INTERVAL = 100
 DEFAULT_MODE = "messages"
 REWARD_AMOUNT = 2500 
+CHALLENGE_TIMEOUT = 60  # Segundos
 
 class Challenges(commands.Cog):
     def __init__(self, bot):
@@ -20,9 +21,11 @@ class Challenges(commands.Cog):
         
         # timer loop (1 vez por minuto)
         self.challenge_timer.start()
+        self.challenge_timeout_checker.start()
 
     def cog_unload(self):
         self.challenge_timer.cancel()
+        self.challenge_timeout_checker.cancel()
 
     @property
     def col(self):
@@ -127,10 +130,42 @@ class Challenges(commands.Cog):
                     {"_id": config["_id"]},
                     {"$set": {"challenge_last": now}}
                 )
+                
+    @tasks.loop(seconds=5)
+    async def challenge_timeout_checker(self):
+        now = time.time()
+
+        to_remove = []
+
+        for guild_id, challenge in self.active_challenges.items():
+            if now - challenge["spawned_at"] >= CHALLENGE_TIMEOUT:
+                to_remove.append(guild_id)
+
+        for guild_id in to_remove:
+            config = self.col.find_one({"_id": guild_id})
+            if not config:
+                continue
+
+            guild = self.bot.get_guild(guild_id)
+            if not guild:
+                continue
+
+            channel = guild.get_channel(config.get("challenge_channel"))
+            if channel:
+                await channel.send(
+                    "⏰ **Tempo esgotado!**\n"
+                    "Ninguém respondeu o desafio a tempo 😢"
+                )
+
+            self.active_challenges.pop(guild_id, None)
+
 
     # ------------- SPAWN CHALLENGE -------------
 
     async def spawn_challenge(self, guild, config):
+        if guild.id in self.active_challenges:
+            return
+
         channel_id = config.get("challenge_channel")
         channel = guild.get_channel(channel_id)
         if not channel:
@@ -163,8 +198,9 @@ class Challenges(commands.Cog):
 
         answer = challenge["answer"]
 
-        if message.content.lower().strip() == answer.lower().strip():
-            # recompensa
+        if normalize(message.content) == normalize(answer):
+            await message.add_reaction("✅")
+
             self.col.update_one(
                 {"_id": message.author.id},
                 {"$inc": {"coins": REWARD_AMOUNT}},
@@ -176,14 +212,13 @@ class Challenges(commands.Cog):
                 f"Você ganhou **{REWARD_AMOUNT} ralcoins!**"
             )
 
-            # remover desafio
             self.active_challenges.pop(guild_id, None)
+
 
     # ------------- GENERATE CHALLENGE -------------
 
     def generate_challenge(self):
-        # decide tipo
-        typ = random.choice(["math","rewrite"])
+        typ = random.choice(["math", "rewrite"])
 
         if typ == "math":
             a = random.randint(1, 50)
@@ -192,21 +227,43 @@ class Challenges(commands.Cog):
                 "question": f"Quanto é **{a} + {b}**?",
                 "answer": str(a + b)
             }
+
         else:
             phrases = [
-                "o cavaleiro foi até a lua em seu cavalo",
-                "a raposa marrom rápida pula sobre o cão preguiçoso",
-                "um rato roeu a roupa do rei de roma",
-                "dia de chuva é dia de poesia",
+                "O cavaleiro foi até a lua em seu cavalo",
+                "A raposa marrom rápida pula sobre o cão preguiçoso",
+                "Um rato roeu a roupa do rei de roma",
+                "Dia de chuva é dia de poesia",
                 "Ralsei é muito fofu",
-                ""
+                "Dois passos para frente, três passos para trás!",
+                "Sua mão é fria como a neve e a minha queima como fogo",
             ]
 
             phrase = random.choice(phrases)
+            disguised = add_invisible_chars(phrase)
+
             return {
-                "question": f"Reescreva a frase:\n`{phrase}`",
+                "question": f"Reescreva a frase exatamente:\n`{disguised}`",
                 "answer": phrase
             }
+
+def add_invisible_chars(text: str):
+    ZERO_WIDTH = "\u200b"
+    result = ""
+
+    for char in text:
+        result += char
+        if char != " " and random.random() < 0.15:
+            result += ZERO_WIDTH
+
+    return result
+
+def normalize(text: str) -> str:
+    return (
+        text.lower()
+        .replace("\u200b", "")
+        .strip()
+    )
 
 async def setup(bot):
     await bot.add_cog(Challenges(bot))
