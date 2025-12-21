@@ -199,14 +199,11 @@ class Challenges(commands.Cog):
         if not challenge:
             return
 
-        answer = challenge["answer"]
-        
-        if challenge.get("token_positions"):
-            if is_paste_detected(answer, message.content, challenge["token_positions"]):
-                return  # ignorar resposta colada
+        # anti ctrl+c ctrl+v
+        if "\u200b" in message.content:
+            return
 
-
-        if normalize(message.content) == normalize(answer):
+        if normalize(message.content) == normalize(challenge["answer"]):
             if challenge["solved"]:
                 return
 
@@ -226,6 +223,7 @@ class Challenges(commands.Cog):
             )
 
             self.active_challenges.pop(guild_id, None)
+
 
 
 
