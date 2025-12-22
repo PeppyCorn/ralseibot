@@ -49,61 +49,67 @@ class Birthday(commands.Cog):
     async def birthday_check(self):
         await self.bot.wait_until_ready()
 
-        now = datetime.now(ZoneInfo("America/Sao_Paulo"))
-        current_hour = now.hour
+        try:
+            now = datetime.now(ZoneInfo("America/Sao_Paulo"))
+            current_hour = now.hour
+            day = now.day
+            month = now.month
 
-        day = now.day
-        month = now.month
+            users = self.col.find({
+                "birthday.day": day,
+                "birthday.month": month
+            })
 
-        users = self.col.find({
-            "birthday.day": day,
-            "birthday.month": month
-        })
+            for user_data in users:
+                user_id = user_data["_id"]
 
-        for user_data in users:
-            user_id = user_data["_id"]
+                for guild in self.bot.guilds:
+                    member = guild.get_member(user_id)
+                    if not member:
+                        continue
 
-            for guild in self.bot.guilds:
-                member = guild.get_member(user_id)
-                if not member:
-                    continue
+                    config = self.config_col.find_one({"_id": guild.id})
+                    if not config:
+                        continue
 
-                config = self.config_col.find_one({"_id": guild.id})
-                if not config:
-                    continue
+                    if config.get("hour") != current_hour:
+                        continue
 
-                if config.get("hour") != current_hour:
-                    continue
-                
-                channel = guild.get_channel(config.get("channel_id"))
-                role = guild.get_role(config.get("role_id"))
+                    channel_id = config.get("channel_id")
+                    if not channel_id:
+                        continue
 
-                if not channel:
-                    continue
+                    channel = guild.get_channel(channel_id)
+                    if not channel:
+                        continue
 
-                message = config.get(
-                    "message",
-                    "🎉 Feliz aniversário, {user}! 🎂"
-                ).replace("{user}", member.mention)
+                    role = guild.get_role(config.get("role_id"))
 
-                await channel.send(message)
+                    message = config.get(
+                        "message",
+                        "🎉 Feliz aniversário, {user}! 🎂"
+                    ).replace("{user}", member.mention)
 
-                if role:
-                    await member.add_roles(role)
-                    asyncio.create_task(self.remove_role_later(member, role))
+                    await channel.send(message)
 
-                # DM opcional
-                if user_data.get("birthday_dm", True):
-                    try:
-                        await member.send(
-                            f"🎂 Feliz aniversário, {member.name}! Que seu dia seja incrível 💖"
-                        )
-                    except discord.Forbidden:
-                        pass
+                    if role:
+                        try:
+                            await member.add_roles(role)
+                            asyncio.create_task(self.remove_role_later(member, role))
+                        except discord.Forbidden:
+                            pass
 
-    async def remove_role_later(self, member, role):
-        await asyncio.sleep(86400)  # 24h
-        await member.remove_roles(role)
+                    if user_data.get("birthday_dm", True):
+                        try:
+                            await member.send(
+                                f"🎂 Feliz aniversário, {member.name}! Que seu dia seja incrível 💖"
+                            )
+                        except discord.Forbidden:
+                            pass
+
+        except Exception as e:
+            print(f"[Birthday Task ERROR] {e}")
+
 
     # =========================
     # 🎂 GROUP /birthday

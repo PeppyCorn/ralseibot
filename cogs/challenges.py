@@ -161,53 +161,61 @@ class Challenges(commands.Cog):
 
     @tasks.loop(seconds=60)
     async def challenge_timer(self):
-        for config in self.col.find({"challenge_enabled": True}):
-            guild = self.bot.get_guild(config["_id"])
-            if not guild:
-                continue
+        try: 
+            for config in self.col.find({"challenge_enabled": True}):
+                guild = self.bot.get_guild(config["_id"])
+                if not guild:
+                    continue
 
-            mode = config.get("challenge_mode", DEFAULT_MODE)
-            if mode != "time":
-                continue
+                mode = config.get("challenge_mode", DEFAULT_MODE)
+                if mode != "time":
+                    continue
 
-            last = config.get("challenge_last", 0)
-            interval = config.get("challenge_interval", DEFAULT_INTERVAL)
-            now = time.time()
+                last = config.get("challenge_last", 0)
+                interval = config.get("challenge_interval", DEFAULT_INTERVAL)
+                now = time.time()
 
-            if now - last >= interval:
-                await self.spawn_challenge(guild, config)
-                self.col.update_one(
-                    {"_id": config["_id"]},
-                    {"$set": {"challenge_last": now}}
-                )
-                
+                if now - last >= interval:
+                    await self.spawn_challenge(guild, config)
+                    self.col.update_one(
+                        {"_id": config["_id"]},
+                        {"$set": {"challenge_last": now}}
+                    )
+                    
+        except Exception as e:
+            print("❌ ERRO NO challenge_timer:", e)
+            
     @tasks.loop(seconds=5)
     async def challenge_timeout_checker(self):
-        now = time.time()
+        try:
+            now = time.time()
 
-        to_remove = []
+            to_remove = []
 
-        for guild_id, challenge in self.active_challenges.items():
-            if now - challenge["spawned_at"] >= CHALLENGE_TIMEOUT:
-                to_remove.append(guild_id)
+            for guild_id, challenge in self.active_challenges.items():
+                if now - challenge["spawned_at"] >= CHALLENGE_TIMEOUT:
+                    to_remove.append(guild_id)
 
-        for guild_id in to_remove:
-            config = self.col.find_one({"_id": guild_id})
-            if not config:
-                continue
+            for guild_id in to_remove:
+                config = self.col.find_one({"_id": guild_id})
+                if not config:
+                    continue
 
-            guild = self.bot.get_guild(guild_id)
-            if not guild:
-                continue
+                guild = self.bot.get_guild(guild_id)
+                if not guild:
+                    continue
 
-            channel = guild.get_channel(config.get("challenge_channel"))
-            if channel:
-                await channel.send(
-                    "⏰ **Tempo esgotado!**\n"
-                    "Ninguém respondeu o desafio a tempo 😢"
-                )
+                channel = guild.get_channel(config.get("challenge_channel"))
+                if channel:
+                    await channel.send(
+                        "⏰ **Tempo esgotado!**\n"
+                        "Ninguém respondeu o desafio a tempo 😢"
+                    )
 
-            self.active_challenges.pop(guild_id, None)
+                self.active_challenges.pop(guild_id, None)     
+                    
+        except Exception as e:
+            print("❌ ERRO NO challenge_timeout_checker:", e)
 
 
     # ------------- SPAWN CHALLENGE -------------
