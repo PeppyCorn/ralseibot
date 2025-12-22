@@ -1,5 +1,6 @@
 discord.py
 pymongo
-requests
-dotenv
-pillow
+dnspython
+Pillow
+aiohttp
+python-dotenv
