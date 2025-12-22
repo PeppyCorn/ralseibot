@@ -102,7 +102,7 @@ class Birthday(commands.Cog):
                     if user_data.get("birthday_dm", True):
                         try:
                             await member.send(
-                                f"🎂 Feliz aniversário, {member.name}! Que seu dia seja incrível 💖"
+                                f"🎂 Feliz aniversário, {member.mention}! Que seu dia seja incrível 💖"
                             )
                         except discord.Forbidden:
                             pass
