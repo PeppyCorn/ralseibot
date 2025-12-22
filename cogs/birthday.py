@@ -2,6 +2,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import asyncio
 
 class BirthdayDMView(discord.ui.View):
@@ -48,7 +49,7 @@ class Birthday(commands.Cog):
     async def birthday_check(self):
         await self.bot.wait_until_ready()
 
-        now = datetime.now()
+        now = datetime.now(ZoneInfo("America/Sao_Paulo"))
         current_hour = now.hour
 
         day = now.day
