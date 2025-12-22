@@ -166,7 +166,7 @@ class Birthday(commands.Cog):
         users = self.col.find({"birthday.month": month})
 
         embed = discord.Embed(
-            title=f"🎂 Aniversariantes de {month:02d}",
+            title=f"🎂 Aniversariantes do mês {month:02d}",
             color=discord.Color.pink()
         )
 
@@ -216,6 +216,9 @@ class Birthday(commands.Cog):
         role: discord.Role | None = None,
         message: str | None = None
     ):
+        # 👇 ISSO É O MAIS IMPORTANTE
+        await interaction.response.defer(ephemeral=True)
+
         self.config_col.update_one(
             {"_id": interaction.guild.id},
             {"$set": {
@@ -227,9 +230,11 @@ class Birthday(commands.Cog):
             upsert=True
         )
 
-        await interaction.response.send_message(
+        # 👇 depois do defer, SEMPRE followup
+        await interaction.followup.send(
             f"⚙️ Aniversário configurado para **{hour:02d}:00** com sucesso!"
         )
+
 
 async def setup(bot):
     await bot.add_cog(Birthday(bot))
