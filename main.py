@@ -44,6 +44,7 @@ COGS = [
     "cogs.economy_rps",
     "cogs.avatar",
     "cogs.challenges",
+    "cogs.birthday",
     "cogs.tickets",
     "cogs.fun",
     "cogs.help",
