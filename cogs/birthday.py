@@ -230,7 +230,6 @@ class Birthday(commands.Cog):
             upsert=True
         )
 
-        # 👇 depois do defer, SEMPRE followup
         await interaction.followup.send(
             f"⚙️ Aniversário configurado para **{hour:02d}:00** com sucesso!"
         )
