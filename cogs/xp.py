@@ -282,42 +282,36 @@ class XP(commands.Cog):
 
     @rank_group.command(
         name="global",
-        description="Mostra o ranking global de XP."
+        description="Mostra o ranking de XP global."
     )
-    async def rank_global(self, interaction: discord.Interaction):
-        await interaction.response.defer()
-
-        page = 0
+    @app_commands.describe(page="Página do ranking (ex: 1, 2, 3...)")
+    async def rank_global(
+        self,
+        interaction: discord.Interaction,
+        page: app_commands.Range[int, 1, 50] | None = None
+    ):
         page_size = 10
+        page_index = (page - 1) if page else 0
 
         embed = await self.build_rank_embed(
             interaction,
-            page,
+            page_index,
             page_size
         )
-
-        if embed is None:
-            return await interaction.followup.send(
-                "❌ Não há usuários suficientes para o ranking.",
-                ephemeral=True
-            )
 
         view = RankView(
             cog=self,
             interaction=interaction,
-            page=page,
+            page=page_index,
             page_size=page_size,
-            timeout=60
+            build_func=self.build_rank_embed
         )
 
-        view.build_func = self.build_rank_embed
-
-        message = await interaction.followup.send(
+        await interaction.response.send_message(
             embed=embed,
             view=view
         )
 
-        view.message = message
 
 
     # ------------------------------
