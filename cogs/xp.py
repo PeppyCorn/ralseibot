@@ -13,14 +13,22 @@ RANK_PAGE_SIZE = 10
 MAX_RANK_PAGE = 50
 
 class RankView(discord.ui.View):
-    def __init__(self, cog, interaction, page, page_size=10, timeout=60):
-        super().__init__(timeout=timeout)
+    def __init__(
+        self,
+        cog,
+        interaction: discord.Interaction,
+        page: int,
+        page_size: int,
+        build_func
+    ):
+        super().__init__(timeout=60)
+
         self.cog = cog
-        self.author_id = interaction.user.id
+        self.interaction = interaction
         self.page = page
         self.page_size = page_size
-        self.message = None
-        self.build_func = cog.build_rank_embed
+        self.build_func = build_func
+
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.author_id:
@@ -81,16 +89,23 @@ class RankView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label="➡️", style=discord.ButtonStyle.secondary)
-    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
-        self.page += 1
-        embed = await self.build_func(interaction, self.page, self.page_size)
+    async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.interaction.user.id:
+            return await interaction.response.send_message(
+                "❌ Apenas quem usou o comando pode interagir.",
+                ephemeral=True
+            )
 
-        if embed is None:
-            self.page -= 1
-            await interaction.response.defer()
-            return
+        self.page += 1
+
+        embed = await self.build_func(
+            interaction,
+            self.page,
+            self.page_size
+        )
 
         await interaction.response.edit_message(embed=embed, view=self)
+
         
         
     async def get_user_rank(self, user: discord.Member):
