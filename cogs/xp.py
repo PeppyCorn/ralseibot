@@ -465,7 +465,7 @@ class XP(commands.Cog):
                 name = f"Usuário ({uid})"
 
             if uid == interaction.user.id:
-                desc += f"## ⭐ **#{pos} - {name.upper()}** • {xp} XP\n"
+                desc += f"# ⭐ **#{pos} - {name.upper()}** • {xp} XP\n"
             else:
                 desc += f"**#{pos} - {name}** • {xp} XP\n"
 
@@ -477,8 +477,6 @@ class XP(commands.Cog):
 
         embed.set_footer(text=f"Página {page + 1}")
         return embed
-
-
 
     async def build_local_rank_embed(self, interaction, page, page_size):
         guild_id = str(interaction.guild.id)
