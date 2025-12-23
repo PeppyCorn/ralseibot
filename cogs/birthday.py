@@ -223,7 +223,7 @@ class Birthday(commands.Cog):
         role: discord.Role | None = None,
         message: str | None = None
     ):
-        # 👇 ISSO É O MAIS IMPORTANTE
+        
         await interaction.response.defer(ephemeral=True)
 
         self.config_col.update_one(
