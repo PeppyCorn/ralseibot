@@ -3,7 +3,6 @@ from discord import app_commands
 from discord.ext import commands
 from datetime import datetime, timedelta, timezone
 import random
-from views.rank_view import RankView 
 
 BR_TZ = timezone(timedelta(hours=-3))
 

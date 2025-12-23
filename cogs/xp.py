@@ -28,6 +28,9 @@ class RankView(discord.ui.View):
         self.page = page
         self.page_size = page_size
         self.build_func = build_func
+        self.author_id = interaction.user.id
+        self.message = None
+
 
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -364,8 +367,9 @@ class XP(commands.Cog):
             interaction=interaction,
             page=page_index,
             page_size=page_size,
-            timeout=60
+            build_func=self.build_local_rank_embed
         )
+
 
         # 🔗 liga a função correta (LOCAL)
         view.build_func = self.build_local_rank_embed
