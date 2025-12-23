@@ -152,14 +152,12 @@ class Economy(commands.Cog):
             get_rank_func=self.get_coin_rank
         )
 
-
         await interaction.response.send_message(
             embed=embed,
             view=view
         )
 
         view.message = await interaction.original_response()
-
 
 async def setup(bot):
     await bot.add_cog(Economy(bot))
