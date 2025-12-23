@@ -133,7 +133,7 @@ class Economy(commands.Cog):
 
         embed = await self.build_rankcoins_embed(
             interaction,
-            page_index + 1,
+            page_index,
             page_size
         )
 
@@ -149,7 +149,7 @@ class Economy(commands.Cog):
             page=page_index,
             page_size=page_size,
             build_func=self.build_rankcoins_embed,
-            get_rank_func=self.get_coin_position
+            get_rank_func=self.get_coin_rank
         )
 
 
