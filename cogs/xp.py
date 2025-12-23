@@ -380,12 +380,9 @@ class XP(commands.Cog):
             interaction=interaction,
             page=page_index,
             page_size=page_size,
-            build_func=self.build_local_rank_embed
+            build_func=self.build_local_rank_embed,
+            get_rank_func=self.get_xp_rank
         )
-
-
-        # 🔗 liga a função correta (LOCAL)
-        view.build_func = self.build_local_rank_embed
 
         message = await interaction.followup.send(
             embed=embed,
