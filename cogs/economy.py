@@ -224,32 +224,47 @@ class Economy(commands.Cog):
         return embed
 
       # ------------------ RANK GLOBAL ------------------
-    @app_commands.command(name="rankcoins", description="Rank global de ralcoins")
-    async def rank(self, interaction: discord.Interaction, page: int = 1):
-        page_size = 5
+    @app_commands.command(name="rankcoins", description="Top 5 mais ricos do bot")
+    async def rank(self, interaction: discord.Interaction):
 
-        embed = await self.build_rankcoins_embed(
-            interaction=interaction,
-            page=page,
-            page_size=page_size
+
+        top = list(
+            self.col.find(
+                {"coins": {"$exists": True}},
+                {"coins": 1}
+            ).sort("coins", -1).limit(5)
         )
 
-        if not embed:
+        if not top:
             return await interaction.response.send_message(
-                "Ainda não há dados de economia 😢",
-                ephemeral=True
+                "Ainda não há dados de economia 😢"
             )
 
-        view = RankView(
-            cog=self,
-            interaction=interaction,
-            page=page,
-            page_size=page_size,
-            build_func=self.build_rankcoins_embed
+        description = ""
+        for i, user_data in enumerate(top, start=1):
+            user_id = user_data["_id"]
+            coins = user_data.get("coins", 0)
+
+            user = self.bot.get_user(user_id)
+            name = user.display_name if user else f"Usuário {user_id}"
+
+            medal = ""
+            if i == 1:
+                medal = "🥇"
+            elif i == 2:
+                medal = "🥈"
+            elif i == 3:
+                medal = "🥉"
+
+            description += f"**{i}. {medal} {name}** ➜ {coins} ralcoins\n"
+
+        embed = discord.Embed(
+            title="🏆 Rank Global de Ralcoins",
+            description=description,
+            color=discord.Color.gold()
         )
 
-        await interaction.response.send_message(embed=embed, view=view)
-        view.message = await interaction.original_response()
+        await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot):
