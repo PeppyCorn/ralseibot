@@ -109,7 +109,7 @@ class Economy(commands.Cog):
             pos = start_pos + i
             user = interaction.client.get_user(u["_id"])
             name = user.display_name if user else f"Usuário {u['_id']}"
-            desc += f"**#{pos} {name}** - {u.get('coins', 0)} • ralcoins\n"
+            desc += f"**#{pos} {name}** • {u.get('coins', 0)} ralcoins\n"
 
         embed = discord.Embed(
             title="🏦 Rank Global de Ralcoins",
