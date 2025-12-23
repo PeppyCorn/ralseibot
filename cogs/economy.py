@@ -107,9 +107,17 @@ class Economy(commands.Cog):
 
         for i, u in enumerate(users):
             pos = start_pos + i
-            user = interaction.client.get_user(u["_id"])
-            name = user.display_name if user else f"Usuário {u['_id']}"
-            desc += f"**#{pos} {name}** • {u.get('coins', 0)} ralcoins\n"
+            uid = u["_id"]
+            coins = u.get("coins", 0)
+
+            user = interaction.client.get_user(uid)
+            name = user.display_name if user else f"Usuário {uid}"
+
+            if uid == interaction.user.id:
+                desc += f"## ⭐ **#{pos} - {name.upper()}** • {coins} ralcoins\n"
+            else:
+                desc += f"**#{pos} - {name}** • {coins} ralcoins\n"
+
 
         embed = discord.Embed(
             title="🏦 Rank Global de Ralcoins",
