@@ -59,6 +59,55 @@ class RankView(discord.ui.View):
             return
 
         await interaction.response.edit_message(embed=embed, view=self)
+        
+class RankGlobalV2(discord.ui.View):
+    def __init__(self, cog, interaction: discord.Interaction, page: int = 0):
+        super().__init__(timeout=60)
+
+        self.cog = cog
+        self.author_id = interaction.user.id
+        self.page = page
+        self.page_size = 10
+        self.message: discord.Message | None = None
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        if interaction.user.id != self.author_id:
+            await interaction.response.send_message(
+                "❌ Só quem executou o comando pode usar os botões!",
+                ephemeral=True
+            )
+            return False
+        return True
+
+    async def on_timeout(self):
+        for btn in self.children:
+            btn.disabled = True
+        if self.message:
+            await self.message.edit(view=self)
+
+    @discord.ui.button(label="⬅️", style=discord.ButtonStyle.primary, custom_id="rank_left")
+    async def previous(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.page > 0:
+            self.page -= 1
+
+        embed = await self.cog.build_rank_embed(interaction, self.page, self.page_size)
+
+        await interaction.update(embed=embed, view=self)
+
+    @discord.ui.button(label="➡️", style=discord.ButtonStyle.primary, custom_id="rank_right")
+    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.page += 1
+
+        embed = await self.cog.build_rank_embed(interaction, self.page, self.page_size)
+
+        # caso não exista mais conteúdo, reverte a página
+        if embed is None:
+            self.page -= 1
+            await interaction.response.defer()
+            return
+
+        await interaction.update(embed=embed, view=self)
+
 
 class XP(commands.Cog):
     def __init__(self, bot):
@@ -257,6 +306,30 @@ class XP(commands.Cog):
         )
 
         view.message = message
+        
+    @rank_group.command(
+        name="globalv2",
+        description="Ranking global de XP (Componentes V2)"
+    )
+    async def rank_global_v2(self, interaction: discord.Interaction):
+        await interaction.response.defer()
+
+        view = RankGlobalV2(self, interaction, page=0)
+        embed = await self.build_rank_embed(interaction, view.page, view.page_size)
+
+        if embed is None:
+            return await interaction.followup.send(
+                "❌ Ainda não há usuários com XP registrado!",
+                ephemeral=True
+            )
+
+        message = await interaction.followup.send(
+            embed=embed,
+            view=view
+        )
+
+        view.message = message
+
 
     # ------------------------------
     # /rank local 
@@ -463,9 +536,9 @@ class XP(commands.Cog):
                 name = f"Usuário ({uid})"
 
             if uid == interaction.user.id:
-                desc += f"## ⭐ **#{pos} - {name.upper()}** • {xp} XP\n"
+                desc += f"⭐ **#{pos} — {name.upper()}** • {xp} XP\n"
             else:
-                desc += f"**#{pos} - {name}** • {xp} XP\n"
+                desc += f"**#{pos} — {name}** • {xp} XP\n"
 
         embed = discord.Embed(
             title="🌍 Ranking Global de XP",
@@ -475,6 +548,7 @@ class XP(commands.Cog):
 
         embed.set_footer(text=f"Página {page + 1}")
         return embed
+
 
 
     async def build_local_rank_embed(self, interaction, page, page_size):

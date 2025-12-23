@@ -64,7 +64,7 @@ class Economy(commands.Cog):
             name = user.display_name
         elif user.bot:
             user_id = BOT_ECONOMY_ID
-            name = "🏦 Banco do Ralsei"
+            name = "Ralsei"
         else:
             user_id = user.id
             name = user.display_name
@@ -86,7 +86,7 @@ class Economy(commands.Cog):
     @app_commands.command(name="rankcoins", description="Top 5 mais ricos do bot")
     async def rank(self, interaction: discord.Interaction):
 
-        # busca top 5 ordenado por coins
+
         top = list(
             self.col.find(
                 {"coins": {"$exists": True}},
