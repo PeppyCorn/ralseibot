@@ -19,7 +19,8 @@ class RankView(discord.ui.View):
         interaction: discord.Interaction,
         page: int,
         page_size: int,
-        build_func
+        build_func,
+        get_rank_func
     ):
         super().__init__(timeout=60)
 
@@ -28,9 +29,9 @@ class RankView(discord.ui.View):
         self.page = page
         self.page_size = page_size
         self.build_func = build_func
+        self.get_rank_func = get_rank_func
         self.author_id = interaction.user.id
         self.message = None
-
 
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
@@ -60,19 +61,14 @@ class RankView(discord.ui.View):
         await interaction.response.edit_message(embed=embed, view=self)
         
     @discord.ui.button(label="📍", style=discord.ButtonStyle.primary)
-    async def my_position(
-        self,
-        interaction: discord.Interaction,
-        button: discord.ui.Button
-    ):
+    async def my_position(self, interaction: discord.Interaction, button: discord.ui.Button):
         if interaction.user.id != self.author_id:
             return await interaction.response.send_message(
                 "❌ Apenas quem executou o comando pode usar.",
                 ephemeral=True
             )
 
-        # Descobre o rank do usuário
-        rank = await self.get_user_rank(interaction.user)
+        rank = await self.get_rank_func(interaction.user)
 
         if rank is None:
             return await interaction.response.send_message(
@@ -80,16 +76,16 @@ class RankView(discord.ui.View):
                 ephemeral=True
             )
 
-        # Calcula a página
         self.page = (rank - 1) // self.page_size
 
         embed = await self.build_func(
             interaction,
-            self.page,
+            self.page + 1,
             self.page_size
         )
 
         await interaction.response.edit_message(embed=embed, view=self)
+
 
     @discord.ui.button(label="➡️", style=discord.ButtonStyle.secondary)
     async def next_page(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -331,8 +327,10 @@ class XP(commands.Cog):
             interaction=interaction,
             page=page_index,
             page_size=page_size,
-            build_func=self.build_rank_embed
+            build_func=self.build_rank_embed,
+            get_rank_func=self.get_xp_rank
         )
+
 
         await interaction.response.send_message(
             embed=embed,

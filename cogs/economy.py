@@ -166,8 +166,10 @@ class Economy(commands.Cog):
             interaction=interaction,
             page=page_index,
             page_size=page_size,
-            build_func=self.build_rankcoins_embed
+            build_func=self.build_rankcoins_embed,
+            get_rank_func=self.get_coin_position
         )
+
 
         await interaction.response.send_message(
             embed=embed,
