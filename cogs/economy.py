@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 import random
 from cogs.xp import RankView
 from views.coinflip import CoinflipView
+from views.pay_confirm import PayConfirmView
 
 BR_TZ = timezone(timedelta(hours=-3))
 
@@ -215,25 +216,22 @@ class Economy(commands.Cog):
         user: discord.Member,
         quantidade: app_commands.Range[int, 1, 1_000_000]
     ):
-        sender_id = interaction.user.id
-        receiver_id = user.id
+        sender = interaction.user
+        receiver = user
 
-        # ❌ Não pode pagar a si mesmo
-        if sender_id == receiver_id:
+        if sender.id == receiver.id:
             return await interaction.response.send_message(
                 "❌ Você não pode pagar a si mesmo.",
                 ephemeral=True
             )
 
-        # ❌ Não pode pagar bots
-        if user.bot:
+        if receiver.bot:
             return await interaction.response.send_message(
-                "❌ Você não pode pagar ralcoins para bots.",
+                "❌ Você não pode pagar bots.",
                 ephemeral=True
             )
 
-        # Busca saldo do pagador
-        sender_data = self.col.find_one({"_id": sender_id}) or {}
+        sender_data = self.col.find_one({"_id": sender.id}) or {}
         sender_coins = sender_data.get("coins", 0)
 
         if sender_coins < quantidade:
@@ -242,29 +240,21 @@ class Economy(commands.Cog):
                 ephemeral=True
             )
 
-        # 💸 Debita quem paga
-        self.col.update_one(
-            {"_id": sender_id},
-            {"$inc": {"coins": -quantidade}}
-        )
-
-        # 💰 Credita quem recebe
-        self.col.update_one(
-            {"_id": receiver_id},
-            {"$inc": {"coins": quantidade}},
-            upsert=True
-        )
-
         embed = discord.Embed(
-            title="💸 Pagamento realizado!",
+            title="⚠️ Confirmação de pagamento",
             description=(
-                f"**{interaction.user.display_name}** pagou "
-                f"**{quantidade} ralcoins** para **{user.display_name}** 💰"
+                f"**{sender.display_name}**, você deseja pagar:\n\n"
+                f"💰 **{quantidade} ralcoins**\n"
+                f"👤 Para: **{receiver.display_name}**\n\n"
+                "⚠️ **Ambos precisam confirmar para concluir**"
             ),
-            color=discord.Color.green()
+            color=discord.Color.orange()
         )
 
-        await interaction.response.send_message(embed=embed)
+        view = PayConfirmView(self, sender, receiver, quantidade)
+
+        await interaction.response.send_message(embed=embed, view=view)
+        view.message = await interaction.original_response()
 
     
     @bet.command(name="coinflip", description="Aposte no cara ou coroa")
