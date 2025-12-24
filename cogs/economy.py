@@ -14,7 +14,6 @@ class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.col = bot.get_cog("XP").col
-        self.bot.tree.add_command(self.bet)
         
         self.col.update_one(
             {"_id": BOT_ECONOMY_ID},
