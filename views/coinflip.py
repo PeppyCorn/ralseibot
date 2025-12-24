@@ -4,6 +4,8 @@ import random
 WIN_CHANCE = 0.48
 MAX_DOUBLES = 5
 
+BOT_ECONOMY_ID = 0
+
 class CoinflipView(discord.ui.View):
     def __init__(self, cog, interaction, amount):
         super().__init__(timeout=30)
@@ -24,6 +26,14 @@ class CoinflipView(discord.ui.View):
 
     @discord.ui.button(label="🔁 Dobrar", style=discord.ButtonStyle.success)
     async def double(self, interaction: discord.Interaction, button: discord.ui.Button):
+        
+        bot_data = self.cog.col.find_one({"_id": BOT_ECONOMY_ID}) or {}
+        if bot_data.get("coins", 0) < self.amount:
+            return await interaction.response.send_message(
+                "🏦 O bot não tem saldo para bancar a próxima rodada.",
+                ephemeral=True
+            )
+
         self.rounds += 1
 
         if random.random() < WIN_CHANCE:
@@ -56,10 +66,18 @@ class CoinflipView(discord.ui.View):
 
     @discord.ui.button(label="🛑 Parar", style=discord.ButtonStyle.danger)
     async def stop_bet(self, interaction: discord.Interaction, button: discord.ui.Button):
+        # Usuário recebe
         self.cog.col.update_one(
             {"_id": self.author_id},
             {"$inc": {"coins": self.amount}}
         )
+
+        # Bot paga
+        self.cog.col.update_one(
+            {"_id": BOT_ECONOMY_ID},
+            {"$inc": {"coins": -self.amount}}
+        )
+
 
         embed = discord.Embed(
             title="🏁 Aposta finalizada",

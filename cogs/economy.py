@@ -204,6 +204,15 @@ class Economy(commands.Cog):
         side: app_commands.Choice[str],
         quantidade: app_commands.Range[int, 100, 100_000]
     ):
+        bot_data = self.col.find_one({"_id": BOT_ECONOMY_ID}) or {}
+        bot_coins = bot_data.get("coins", 0)
+
+        if bot_coins < quantidade:
+            return await interaction.response.send_message(
+                "🏦 O bot não tem saldo suficiente para bancar essa aposta.",
+                ephemeral=True
+            )
+
         user_id = interaction.user.id
 
         data = self.col.find_one({"_id": user_id}) or {}
@@ -218,8 +227,12 @@ class Economy(commands.Cog):
         # Debita aposta inicial
         self.col.update_one(
             {"_id": user_id},
-            {"$inc": {"coins": -quantidade}},
-            upsert=True
+            {"$inc": {"coins": -quantidade}}
+        )
+
+        self.col.update_one(
+            {"_id": BOT_ECONOMY_ID},
+            {"$inc": {"coins": -quantidade}}
         )
 
         result = random.choice(["cara", "coroa"])
@@ -247,11 +260,8 @@ class Economy(commands.Cog):
             color=discord.Color.green()
         )
 
-        view = CoinflipView(
-            cog=self,
-            interaction=interaction,
-            quantidade = quantidade * 2
-        )
+        view = CoinflipView(self, interaction, quantidade * 2)
+
 
         await interaction.response.send_message(
             embed=embed,
