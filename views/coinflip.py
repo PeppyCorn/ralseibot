@@ -26,7 +26,7 @@ class CoinflipView(discord.ui.View):
 
     @discord.ui.button(label="🔁 Dobrar", style=discord.ButtonStyle.success)
     async def double(self, interaction: discord.Interaction, button: discord.ui.Button):
-        
+
         bot_data = self.cog.col.find_one({"_id": BOT_ECONOMY_ID}) or {}
         if bot_data.get("coins", 0) < self.amount:
             return await interaction.response.send_message(
@@ -37,15 +37,12 @@ class CoinflipView(discord.ui.View):
         self.rounds += 1
 
         if random.random() < WIN_CHANCE:
+            # Usuário ganhou → valor dobra
             self.amount *= 2
-
-            if self.rounds >= MAX_DOUBLES:
-                button.disabled = True
 
             embed = discord.Embed(
                 title="🪙 Coinflip - Vitória!",
                 description=(
-                    f"Você ganhou!\n\n"
                     f"💰 Valor atual: **{self.amount} ralcoins**\n"
                     f"🔥 Vitórias seguidas: **{self.rounds}**"
                 ),
@@ -55,7 +52,7 @@ class CoinflipView(discord.ui.View):
             await interaction.response.send_message(embed=embed)
 
         else:
-            # Bot recebe tudo
+            # Usuário perdeu → bot recebe o valor atual
             self.cog.col.update_one(
                 {"_id": BOT_ECONOMY_ID},
                 {"$inc": {"coins": self.amount}}
@@ -63,36 +60,28 @@ class CoinflipView(discord.ui.View):
 
             embed = discord.Embed(
                 title="💥 Coinflip - Derrota!",
-                description=(
-                    "Você perdeu **tudo** 😢\n\n"
-                    f"🏦 O bot ficou com **{self.amount} ralcoins**"
-                ),
+                description=f"Você perdeu **{self.amount} ralcoins** 😢",
                 color=discord.Color.red()
             )
 
             await interaction.response.send_message(embed=embed)
-
-            for item in self.children:
-                item.disabled = True
-
-            await self.message.edit(view=self)
             self.stop()
 
 
     @discord.ui.button(label="🛑 Parar", style=discord.ButtonStyle.danger)
     async def stop_bet(self, interaction: discord.Interaction, button: discord.ui.Button):
-        # Usuário recebe
-        self.cog.col.update_one(
-            {"_id": self.author_id},
-            {"$inc": {"coins": self.amount}}
-        )
 
-        # Bot paga
+        # Bot paga o valor final
         self.cog.col.update_one(
             {"_id": BOT_ECONOMY_ID},
             {"$inc": {"coins": -self.amount}}
         )
 
+        # Usuário recebe
+        self.cog.col.update_one(
+            {"_id": self.author_id},
+            {"$inc": {"coins": self.amount}}
+        )
 
         embed = discord.Embed(
             title="🏁 Aposta finalizada",
@@ -102,6 +91,7 @@ class CoinflipView(discord.ui.View):
 
         await interaction.response.send_message(embed=embed)
         self.stop()
+
 
     async def on_timeout(self):
         if self.message:

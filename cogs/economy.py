@@ -242,12 +242,6 @@ class Economy(commands.Cog):
                 ephemeral=True
             )
             
-        # Bot entra na aposta inicial
-        self.col.update_one(
-            {"_id": BOT_ECONOMY_ID},
-            {"$inc": {"coins": -quantidade}}
-        )
-
         # Debita aposta inicial
         self.col.update_one(
             {"_id": user_id},
@@ -286,7 +280,12 @@ class Economy(commands.Cog):
             color=discord.Color.green()
         )
 
-        view = CoinflipView(self, interaction, quantidade * 2)
+        view = CoinflipView(
+            self,
+            interaction,
+            amount=quantidade
+        )
+
 
 
         await interaction.response.send_message(
