@@ -29,6 +29,11 @@ class PayConfirmView(discord.ui.View):
             {"$inc": {"coins": self.amount}},
             upsert=True
         )
+        
+        for item in self.children:
+            item.disabled = True
+
+        await self.message.edit(view=self)
 
         embed = discord.Embed(
             title="💸 Transferência concluída!",
@@ -40,7 +45,7 @@ class PayConfirmView(discord.ui.View):
             color=discord.Color.green()
         )
 
-        await interaction.response.edit_message(embed=embed, view=None)
+        await interaction.response.channel.send(embed=embed)
         self.stop()
 
     @discord.ui.button(label="✅ Confirmar", style=discord.ButtonStyle.success)

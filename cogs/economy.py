@@ -267,7 +267,11 @@ class Economy(commands.Cog):
         )
 
 
-        await interaction.response.send_message(embed=embed, view=view)
+        await interaction.response.send_message(
+            content=f"{user.mention}, você recebeu uma solicitação de pagamento 💸",
+            embed=embed,
+            view=view
+        )
         view.message = await interaction.original_response()
 
     
