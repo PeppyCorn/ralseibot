@@ -193,6 +193,12 @@ class Economy(commands.Cog):
         side="Escolha cara ou coroa",
         quantidade="Valor da aposta"
     )
+    @app_commands.choices(
+        side=[
+            app_commands.Choice(name="Cara", value="cara"),
+            app_commands.Choice(name="Coroa", value="coroa")
+        ]
+    )
     async def bet_coinflip(
         self,
         interaction: discord.Interaction,
