@@ -77,8 +77,10 @@ class Economy(commands.Cog):
         coins = data.get("coins", 0)
 
         rank = self.col.count_documents({
-            "coins": {"$gt": coins}
+            "coins": {"$gt": coins},
+            "_id": {"$ne": BOT_ECONOMY_ID}
         }) + 1
+
 
         await interaction.response.send_message(
             f"💳 **Saldo de {name}:** {coins} ralcoins\n"
