@@ -4,6 +4,7 @@ from discord.ext import commands
 from datetime import datetime, timedelta, timezone
 import random
 from cogs.xp import RankView
+from views.coinflip import CoinflipView
 
 BR_TZ = timezone(timedelta(hours=-3))
 
@@ -13,6 +14,7 @@ class Economy(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.col = bot.get_cog("XP").col
+        self.bot.tree.add_command(self.bet)
         
         self.col.update_one(
             {"_id": BOT_ECONOMY_ID},
@@ -180,6 +182,80 @@ class Economy(commands.Cog):
         )
 
         view.message = await interaction.original_response()
+        
+    bet = app_commands.Group(
+        name="bet",
+        description="Sistema de apostas"
+    )
+    
+    @bet.command(name="coinflip", description="Aposte no cara ou coroa")
+    @app_commands.describe(
+        side="Escolha cara ou coroa",
+        quantidade="Valor da aposta"
+    )
+    async def bet_coinflip(
+        self,
+        interaction: discord.Interaction,
+        side: app_commands.Choice[str],
+        quantidade: app_commands.Range[int, 100, 100_000]
+    ):
+        user_id = interaction.user.id
+
+        data = self.col.find_one({"_id": user_id}) or {}
+        coins = data.get("coins", 0)
+
+        if coins < quantidade:
+            return await interaction.response.send_message(
+                "❌ Você não tem ralcoins suficientes.",
+                ephemeral=True
+            )
+
+        # Debita aposta inicial
+        self.col.update_one(
+            {"_id": user_id},
+            {"$inc": {"coins": -quantidade}},
+            upsert=True
+        )
+
+        result = random.choice(["cara", "coroa"])
+
+        if result != side.value:
+            embed = discord.Embed(
+                title="💥 Coinflip — Derrota!",
+                description=(
+                    f"🪙 Caiu **{result}**\n"
+                    f"Você perdeu **{quantidade} ralcoins** 😢"
+                ),
+                color=discord.Color.red()
+            )
+
+            return await interaction.response.send_message(embed=embed)
+
+        # Vitória inicial
+        embed = discord.Embed(
+            title="🪙 Coinflip — Vitória!",
+            description=(
+                f"🪙 Caiu **{result}**\n\n"
+                f"💰 Você ganhou **{quantidade} ralcoins**!\n"
+                f"Quer dobrar ou parar?"
+            ),
+            color=discord.Color.green()
+        )
+
+        view = CoinflipView(
+            cog=self,
+            interaction=interaction,
+            quantidade = quantidade * 2
+        )
+
+        await interaction.response.send_message(
+            embed=embed,
+            view=view
+        )
+
+        view.message = await interaction.original_response()
+
+
 
 async def setup(bot):
     await bot.add_cog(Economy(bot))
