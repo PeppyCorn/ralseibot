@@ -236,16 +236,11 @@ class Economy(commands.Cog):
             {"$inc": {"coins": -quantidade}}
         )
 
-        self.col.update_one(
-            {"_id": BOT_ECONOMY_ID},
-            {"$inc": {"coins": -quantidade}}
-        )
-
         result = random.choice(["cara", "coroa"])
 
         if result != side.value:
             embed = discord.Embed(
-                title="💥 Coinflip — Derrota!",
+                title="💥 Coinflip - Derrota!",
                 description=(
                     f"🪙 Caiu **{result}**\n"
                     f"Você perdeu **{quantidade} ralcoins** 😢"
@@ -257,7 +252,7 @@ class Economy(commands.Cog):
 
         # Vitória inicial
         embed = discord.Embed(
-            title="🪙 Coinflip — Vitória!",
+            title="🪙 Coinflip - Vitória!",
             description=(
                 f"🪙 Caiu **{result}**\n\n"
                 f"💰 Você ganhou **{quantidade} ralcoins**!\n"

@@ -55,14 +55,29 @@ class CoinflipView(discord.ui.View):
             await interaction.response.send_message(embed=embed)
 
         else:
+            # Bot recebe tudo
+            self.cog.col.update_one(
+                {"_id": BOT_ECONOMY_ID},
+                {"$inc": {"coins": self.amount}}
+            )
+
             embed = discord.Embed(
                 title="💥 Coinflip - Derrota!",
-                description="Você perdeu **tudo** 😢",
+                description=(
+                    "Você perdeu **tudo** 😢\n\n"
+                    f"🏦 O bot ficou com **{self.amount} ralcoins**"
+                ),
                 color=discord.Color.red()
             )
 
-            await interaction.response.edit_message(embed=embed, view=None)
+            await interaction.response.send_message(embed=embed)
+
+            for item in self.children:
+                item.disabled = True
+
+            await self.message.edit(view=self)
             self.stop()
+
 
     @discord.ui.button(label="🛑 Parar", style=discord.ButtonStyle.danger)
     async def stop_bet(self, interaction: discord.Interaction, button: discord.ui.Button):
