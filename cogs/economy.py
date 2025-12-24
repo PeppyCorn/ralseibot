@@ -251,10 +251,9 @@ class Economy(commands.Cog):
         result = random.choice(["cara", "coroa"])
 
         if result != side.value:
-            # Bot recebe o pote inteiro
             self.col.update_one(
                 {"_id": BOT_ECONOMY_ID},
-                {"$inc": {"coins": total_amount}}
+                {"$inc": {"coins": quantidade}}
             )
 
             embed = discord.Embed(
@@ -267,6 +266,7 @@ class Economy(commands.Cog):
             )
 
             return await interaction.response.send_message(embed=embed)
+
 
 
         # Vitória inicial
