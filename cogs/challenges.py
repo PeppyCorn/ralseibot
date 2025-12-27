@@ -44,6 +44,16 @@ class Challenges(commands.Cog):
     def cog_unload(self):
         self.challenge_timer.cancel()
         self.challenge_timeout_checker.cancel()
+        
+    async def send_speed_messege(self, channel, user, response_time):
+        await asyncio.sleep(10)
+
+        await channel.send(
+            f"💡 **Você sabia?**\n"
+            f"O {user.mention} respondeu corretamente em "
+            f"**{response_time:.2f} segundos** ⌨️⚡"
+        )
+    
 
     @property
     def col(self):
@@ -271,6 +281,9 @@ class Challenges(commands.Cog):
             to_remove = []
 
             for guild_id, challenge in self.active_challenges.items():
+                if challenge.get("solved"):
+                    continue
+                    
                 if now - challenge["spawned_at"] >= CHALLENGE_TIMEOUT:
                     to_remove.append(guild_id)
 
@@ -358,6 +371,8 @@ class Challenges(commands.Cog):
             challenge["solved"] = True
 
             reward = random.randint(REWARD_MIN, REWARD_MAX)
+            
+            response_time = time.time() - challenge["spawned_at"]
 
             await message.add_reaction("✅")
 
@@ -373,12 +388,20 @@ class Challenges(commands.Cog):
             )
 
 
-
             await message.channel.send(
                 f"🎉 {message.author.mention} acertou! "
                 f"Você ganhou **{reward} ralcoins!**"
             )
 
+            asyncio.create_task(
+                self.send_speed_message(
+                    message.channel,
+                    message.author,
+                    response_time
+                )
+            )
+
+            
             self.active_challenges.pop(guild_id, None)
             self.warned_users.clear()  # limpar avisos do desafio
 
