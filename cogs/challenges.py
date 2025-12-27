@@ -46,7 +46,7 @@ class Challenges(commands.Cog):
         self.challenge_timeout_checker.cancel()
         
     async def send_speed_message(self, channel, user, response_time):
-        await asyncio.sleep(10)
+        await asyncio.sleep(30)
 
         await channel.send(
             f"💡 **Você sabia?**\n"
