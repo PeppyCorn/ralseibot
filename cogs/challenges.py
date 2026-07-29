@@ -1658,52 +1658,42 @@ class Challenges(commands.Cog):
                 # ----------------------------------
                 challenge["solved"] = True      
 
-                # 1. Definição da recompensa base (Aleatória dentro do cache/padrão)
+                # 1. Valor base sorteado
                 config_cache = self.config_cache.get(message.guild.id, {})
                 min_ganho = config_cache.get("min_ralcoins", REWARD_MIN)
                 max_ganho = config_cache.get("max_ralcoins", REWARD_MAX)
                 reward_base = random.randint(min_ganho, max_ganho)
 
-                # 2. Cálculo do tempo gasto e do bônus de velocidade
+                # 2. Cálculo do tempo e do bônus
                 response_time = time.time() - challenge["spawned_at"]
                 dificuldade = challenge.get("dificuldade", "medio")
                 bonus = calcular_multiplicador_tempo(response_time, dificuldade)
+                
+                # 3. Valor final que combina o base + bônus
                 reward_final = round(reward_base * bonus)
-
                 ganho_extra = reward_final - reward_base
 
                 await message.add_reaction("✅")
 
-                # 3. Salvando o valor final (reward_final) no MongoDB global
+                # 4. Salva o REWARD_FINAL no banco de dados
                 await self.col_users.update_one(
                     {"_id": message.author.id},
                     {"$inc": {"challenge_wins": 1, "challenge_earnings": reward_final, "coins": reward_final}},
                     upsert=True
                 )
 
-                # 4. Salvando o progresso no MongoDB local da Guilda
-                database = getattr(self.bot, "db", None)
-                if database is not None:
-                    await database.member_challenges.update_one(
-                        {
-                            "guild_id": message.guild.id, 
-                            "user_id": message.author.id
-                        },
-                        {"$inc": {"local_wins": 1}},
-                        upsert=True
-                    )
-
-                # 4. Mensagem imediata: Fala apenas o acerto e os ralcoins normais
                 view_botao = BalanceButtonView(winner_id=message.author.id, bot=self.bot)
+
+                # 5. Mostra 'reward_final' na mensagem inicial!
                 await message.channel.send(
-                    f"🎉 {message.author.mention} acertou! Você ganhou **{reward_base} ralcoins**!",
+                    f"🎉 {message.author.mention} acertou a resposta e ganhou **{reward_final} ralcoins**!",
                     view=view_botao
                 )
 
                 self.active_challenges.pop(guild_id, None)
                 self.warned_users.clear()
 
-                # 5. Envia os dados completos para a função de speed anunciar o bônus depois
+                # Dispara a mensagem do "Você sabia?" com o tempo e o ganho extra depois
                 asyncio.create_task(
                     self.send_speed_message(
                         message.channel, 
