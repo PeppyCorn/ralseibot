@@ -1686,7 +1686,7 @@ class Challenges(commands.Cog):
 
                 # 5. Mostra 'reward_final' na mensagem inicial!
                 await message.channel.send(
-                    f"🎉 {message.author.mention} acertou a resposta e ganhou **{reward_final} ralcoins**!",
+                    f"🎉 {message.author.mention} acertou a resposta e ganhou **{reward_base} ralcoins**!",
                     view=view_botao
                 )
 
