@@ -184,10 +184,11 @@ class ShipCog(commands.Cog):
 
         if not partner_id:
             return await interaction.response.send_message("Tu nem sequer está casado! >:3", ephemeral=True)
-
+        
         self.col.update_one({"_id": partner_id}, {"$unset": {"marry_id": "", "marry_date": ""}})
 
-        await interaction.response.send_message("💔 O casamento acabou. Espero que seja mais feliz enquanto solteiro.")
+        self.col.update_one({"_id": interaction.user.id}, {"$unset": {"marry_id": "", "marry_date": ""}})
 
+        await interaction.response.send_message("💔 O casamento acabou. Espero que seja mais feliz enquanto solteiro.")
 async def setup(bot):
     await bot.add_cog(ShipCog(bot))
