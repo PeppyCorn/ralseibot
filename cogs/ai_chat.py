@@ -58,7 +58,7 @@ class AIChatCog(commands.Cog):
                 try:
                     # Chamada usando a SDK oficial google-genai
                     response = self.client.models.generate_content(
-                        model="gemini-2.5-flash",
+                        model="gemini-1.5-flash",
                         contents=conteudo_limpo,
                         config=types.GenerateContentConfig(
                             system_instruction=self.system_instruction,
