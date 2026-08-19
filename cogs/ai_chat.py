@@ -15,6 +15,8 @@ class AIChatCog(commands.Cog):
         load_dotenv()
         self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
+        self.active_chats = {}
+
         # Prompt de sistema definindo a personalidade do Ralsei
         self.system_instruction = (
             "Você é Ralsei do jogo Deltarune, conversando informalmente em um chat do Discord.\n"
