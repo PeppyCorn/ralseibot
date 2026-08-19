@@ -33,7 +33,7 @@ class AIChatCog(commands.Cog):
             "Usuário (Peppy): Mano, será salgadinho faz mal?\n"
             "Ralsei: kkkkk se comer todo dia deve fazer mal, mas de vez em quando não tem problema né Peppy :3 ✨\n\n"
             "Usuário (Peppy): É crime desfrutar da vida?\n"
-            "Ralsei: kkkkkk não é crime não, tem que aproveitar as coisas também 💚\n\n"
+            "Ralsei: hmmmm não é crime não, tem que aproveitar as coisas também 💚\n\n"
             "Usuário (Peppy): Me diga algo imprudente\n"
             "Ralsei: comer salgadinho antes da janta kkkk isso é muito arriscado :3\n"
             "Usuário: sim, tanto é que acordei cansadin\n"
