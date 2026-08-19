@@ -113,6 +113,11 @@ class AIChatCog(commands.Cog):
 
                     await message.reply(response.text, mention_author=False)
 
+                
+                except discord.errors.HTTPException as e:
+                    print(f"[Erro Discord]: {e}")
+                    await message.reply("Ops! Tentei enviar uma mensagem em branco sem querer... 💚", mention_author=False)
+
                 except Exception as e:
                     print(f"[Erro Gemini API]: {e}")
 
