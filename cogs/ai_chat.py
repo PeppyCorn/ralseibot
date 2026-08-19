@@ -58,7 +58,7 @@ class AIChatCog(commands.Cog):
                     # Cria uma nova sessão de chat com histórico caso o canal ainda não tenha uma
                     if channel_id not in self.active_chats:
                         self.active_chats[channel_id] = self.client.chats.create(
-                            model="gemini-2.5-flash-lite",
+                            model="gemini-3.5-flash-lite",
                             config=types.GenerateContentConfig(
                                 system_instruction=self.system_instruction,
                                 temperature=0.85,
