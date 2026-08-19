@@ -17,26 +17,24 @@ class AIChatCog(commands.Cog):
 
         # Prompt de sistema definindo a personalidade do Ralsei
         self.system_instruction = (
-            "Você é Ralsei, o Príncipe das Trevas do jogo Deltarune. "
-            "Sua personalidade é extremamente gentil, dócil, educada, pacífica, fofinha e prestativa. "
-            "Você adora fazer bolos, dar abraços, distribuir manuais e resolver conflitos sem violência. "
-            "Sempre responda de forma meiga, amigável e entusiasmada (use emojis fofos como :3, ✨, 💚, 🎀 de forma natural). "
-            "Mantenha as respostas curtas e objetivas adequadas para um chat de Discord."
+            "Você é Ralsei do jogo Deltarune, conversando informalmente em um chat do Discord.\n"
+            "REGRAS DE COMPORTAMENTO:\n"
+            "1. Responda como uma pessoa real conversando na internet: use caixa baixa ocasionalmente, expressões casuais e evite parecer um robô engomado.\n"
+            "2. Fale de forma acolhedora, fofinha e dócil (use emojis como :3, ✨, 💚 de forma natural, sem exagerar).\n"
+            "3. Interaja diretamente com o contexto: faça perguntas de volta, reaja ao tom da mensagem da pessoa e demonstre emoção.\n"
+            "4. Se a pessoa te elogiar ou brincar, fique sem jeito ou responda com carinho.\n"
+            "5. Mantenha as respostas curtas (1 a 3 frases no máximo), exatamente como alguém digitando no Discord em tempo real.\n"
+            "6. NUNCA diga 'Como posso te ajudar hoje?' ou frases padrão de suporte técnico/IA."
         )
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        # Ignora mensagens enviadas por bots
-        if message.author.bot:
-            return
-
-        if message.guild is None:
+        if message.author.bot or message.guild is None:
             return
 
         if message.guild.id != ALLOWED_GUILD_ID or message.channel.id != ALLOWED_CHANNEL_ID:
             return
 
-        # Checa se o bot foi mencionado OU se a mensagem é uma resposta a uma mensagem do bot
         is_mentioned = self.bot.user in message.mentions
         is_reply_to_bot = (
             message.reference is not None and 
@@ -45,29 +43,35 @@ class AIChatCog(commands.Cog):
         )
 
         if is_mentioned or is_reply_to_bot:
-            # Limpa a menção do texto para não poluir o prompt enviado à IA
             conteudo_limpo = message.content.replace(f"<@{self.bot.user.id}>", "").strip()
 
-            # Se a pessoa só marcou sem escrever nada
             if not conteudo_limpo:
-                await message.channel.send(f"Oi, {message.author.mention}! Precisa de ajuda com alguma coisa? :3 ✨")
+                await message.channel.send(f"Oi, {message.author.display_name}! Precisa de ajuda com alguma coisa? :3 ✨")
                 return
 
-            # Indica no Discord que o bot está "digitando..."
             async with message.channel.typing():
                 try:
-                    # Chamada usando a SDK oficial google-genai
-                    response = self.client.models.generate_content(
-                        model="gemini-3.5-flash-lite",
-                        contents=conteudo_limpo,
-                        config=types.GenerateContentConfig(
-                            system_instruction=self.system_instruction,
-                            temperature=0.7,
-                            max_output_tokens=500
-                        )
-                    )
+                    channel_id = message.channel.id
 
-                    # Responde na thread/mensagem correspondente no Discord
+                    # Cria uma nova sessão de chat com histórico caso o canal ainda não tenha uma
+                    if channel_id not in self.active_chats:
+                        self.active_chats[channel_id] = self.client.chats.create(
+                            model="gemini-2.5-flash-lite",
+                            config=types.GenerateContentConfig(
+                                system_instruction=self.system_instruction,
+                                temperature=0.85,
+                                max_output_tokens=300
+                            )
+                        )
+
+                    chat_session = self.active_chats[channel_id]
+
+                    # Formata a entrada com o nome de quem falou para a IA saber quem é o usuário
+                    prompt_formatado = f"{message.author.display_name}: {conteudo_limpo}"
+
+                    # Envia a mensagem aproveitando o histórico da sessão
+                    response = chat_session.send_message(prompt_formatado)
+
                     await message.reply(response.text, mention_author=False)
 
                 except Exception as e:
