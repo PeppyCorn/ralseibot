@@ -75,10 +75,18 @@ class AIChatCog(commands.Cog):
         )
 
         if is_mentioned or is_reply_to_bot:
-            conteudo_limpo = message.content.replace(f"<@{self.bot.user.id}>", "").strip()
+            # 1. Pega o conteúdo original e substitui menções de usuários pelo display_name
+            conteudo_limpo = message.content
+            for user in message.mentions:
+                conteudo_limpo = conteudo_limpo.replace(f"<@{user.id}>", f"@{user.display_name}")
+                conteudo_limpo = conteudo_limpo.replace(f"<@!{user.id}>", f"@{user.display_name}")
 
+            # 2. Remove a menção textual do próprio bot para não poluir o prompt
+            conteudo_limpo = conteudo_limpo.replace(f"@{self.bot.user.display_name}", "").strip()
+
+            # 3. Se o texto ficou vazio (ex: a pessoa só marcou o bot), envia a mensagem padrão
             if not conteudo_limpo:
-                await message.channel.send(f"Oi, {message.author.display_name}! Precisa de ajuda com alguma coisa? :3 ✨")
+                await message.channel.send(f"Olá, {message.author.display_name}! Precisa de ajuda com alguma coisa? :3 ✨")
                 return
 
             async with message.channel.typing():
