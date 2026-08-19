@@ -10,6 +10,9 @@ ALLOWED_CHANNEL_ID = 1442962186120069234
 SERVIDOR2_ID = 1085596185567440916
 CHANNEL2_ID = 1237822889961586770
 
+ALLOWED_GUILD_IDS = [ALLOWED_GUILD_ID, SERVIDOR2_ID]
+ALLOWED_CHANNEL_IDS = [ALLOWED_CHANNEL_ID, CHANNEL2_ID]
+
 class AIChatCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -71,7 +74,7 @@ class AIChatCog(commands.Cog):
         if message.author.bot or message.guild is None:
             return
 
-        if message.guild.id != ALLOWED_GUILD_ID or message.channel.id != ALLOWED_CHANNEL_ID or message.guild.id != SERVIDOR2_ID or message.channel.id != CHANNEL2_ID:
+        if message.guild.id not in ALLOWED_GUILD_IDS or message.channel.id not in ALLOWED_CHANNEL_IDS:
             return
 
         is_mentioned = self.bot.user in message.mentions
