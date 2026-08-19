@@ -70,6 +70,7 @@ class AIChatCog(commands.Cog):
                             config=types.GenerateContentConfig(
                                 system_instruction=self.system_instruction,
                                 temperature=0.85,
+                                top_p=0.9,
                                 max_output_tokens=300
                             )
                         )
@@ -82,10 +83,20 @@ class AIChatCog(commands.Cog):
                     # Envia a mensagem aproveitando o histórico da sessão
                     response = chat_session.send_message(prompt_formatado)
 
+                    resposta_texto = response.text.strip() if response.text else ""
+
+                    if not resposta_texto:
+                        # Fallback seguro caso a IA não retorne texto
+                        resposta_texto = "Poxa, fiquei pensado aqui e não soube o que dizer... :3 ✨"
+
                     await message.reply(response.text, mention_author=False)
 
                 except Exception as e:
                     print(f"[Erro Gemini API]: {e}")
+
+                    if channel_id in self.active_chats:
+                        del self.active_chats[channel_id]
+
                     await message.reply("Ah não, desculpe! Tive um pequeno probleminha no meu manual de magia agora... 😿", mention_author=False)
 
 async def setup(bot):
