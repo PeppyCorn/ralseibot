@@ -71,7 +71,7 @@ class AIChatCog(commands.Cog):
         if message.author.bot or message.guild is None:
             return
 
-        if message.guild.id != ALLOWED_GUILD_ID or message.channel.id != ALLOWED_CHANNEL_ID or SERVIDOR2_ID or CHANNEL2_ID:
+        if message.guild.id != ALLOWED_GUILD_ID or message.channel.id != ALLOWED_CHANNEL_ID or message.guild.id != SERVIDOR2_ID or message.channel.id != CHANNEL2_ID:
             return
 
         is_mentioned = self.bot.user in message.mentions
