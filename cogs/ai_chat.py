@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 
 ALLOWED_GUILD_ID = 1410006076400599235
 ALLOWED_CHANNEL_ID = 1442962186120069234
+SERVIDOR2_ID = 1085596185567440916
+CHANNEL2_ID = 1237822889961586770
 
 class AIChatCog(commands.Cog):
     def __init__(self, bot):
@@ -69,7 +71,7 @@ class AIChatCog(commands.Cog):
         if message.author.bot or message.guild is None:
             return
 
-        if message.guild.id != ALLOWED_GUILD_ID or message.channel.id != ALLOWED_CHANNEL_ID:
+        if message.guild.id != ALLOWED_GUILD_ID or message.channel.id != ALLOWED_CHANNEL_ID or SERVIDOR2_ID or CHANNEL2_ID:
             return
 
         is_mentioned = self.bot.user in message.mentions
