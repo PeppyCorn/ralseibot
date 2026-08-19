@@ -48,8 +48,7 @@ class AIChatCog(commands.Cog):
             "-------------------------------------------\n"
 
             "--- INFORMAÇÕES DO SERVIDOR (FAQ) ---\n"
-            "Como pegar cargos: Vá no canal #cargos e reaja aos emojis correspondentes.\n"
-            "Regra principal: Proibido spam, flood e desrespeito com outros membros.\n"
+            "Regra principal: Proibido spam, flood e desrespeito com outros membros. As demais ficam em <#1410006873977131078>\n"
             "VIP / VIP+ (Vip Coffee e Espresso Premium): Pode ser adquirido na loja do servidor visto bem [https://discord.com/channels/1410006076400599235/1410772275174834349/1450230367050010816](aqui) (usando sonhos da Loritta) com os admins. abrindo o ticket em <#1410025183477235824>\n"
             "Denúncias: Abram um ticket no canal <#1410025183477235824> para falar com os moderadores.\n"
             "Parcerias: Abram um ticket no canal <#1410025183477235824> para falar com os promotores de parceria.\n"
