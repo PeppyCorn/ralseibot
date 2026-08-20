@@ -7,3 +7,4 @@ requests
 python-dotenv
 motor
 google-genai
+aiohttp

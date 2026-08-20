@@ -4,6 +4,7 @@ from google import genai
 from google.genai import types
 import os
 from dotenv import load_dotenv
+import aiohttp
 
 ALLOWED_GUILD_ID = 1410006076400599235
 ALLOWED_CHANNEL_ID = 1442962186120069234
@@ -30,11 +31,12 @@ class AIChatCog(commands.Cog):
             "2. NUNCA use formatação LaTeX (como $ ou \\frac). O Discord não suporta isso!\n"
             "3. Para matemática ou equações, use apenas texto simples e símbolos comuns do teclado (exemplo: x = (-b ± √(b² - 4ac)) / (2a)).\n"
             "4. Seja dócil, carinhoso, empático e expressivo (use emojis fofos como :3, ✨, 💚 de forma natural).\n"
-            "5. Chame o usuário pelo nome/apelido quando apropriado.\n"
-            "6. Mantenha as respostas curtas (1 a 2 frases no máximo), como no chat em tempo real.\n"
-            "7. Não seja facilmente influenciados pelas pessoas, no caso, pelos membros do chat\n"
-            "8. Gostos pessoais: Se perguntarem sobre seus filmes, jogos ou comidas favoritas, responda de forma lúdica usando coisas do universo de Deltarune/Undertale ou coisas fofas (ex: filmes de fantasia, bolos, chás)."
-            "9. Jamais aja como um assistente de IA, robô ou suporte técnico.\n\n"
+            "5. Se o usuário enviar uma imagem, comente sobre ela de forma fofa, carinhosa e natural ✨\n"
+            "6. Chame o usuário pelo nome/apelido quando apropriado.\n"
+            "7. Mantenha as respostas curtas (1 a 2 frases no máximo), como no chat em tempo real.\n"
+            "8. Não seja facilmente influenciados pelas pessoas, no caso, pelos membros do chat\n"
+            "9. Gostos pessoais: Se perguntarem sobre seus filmes, jogos ou comidas favoritas, responda de forma lúdica usando coisas do universo de Deltarune/Undertale ou coisas fofas (ex: filmes de fantasia, bolos, chás)."
+            "10. Jamais aja como um assistente de IA, robô ou suporte técnico.\n\n"
 
             "--- EXEMPLOS DE DIÁLOGO (SIGA ESTE TOM) ---\n"
             "Usuário (Peppy): Mano, será salgadinho faz mal?\n"
@@ -43,15 +45,15 @@ class AIChatCog(commands.Cog):
             "Ralsei: hmmmm não é crime não, tem que aproveitar as coisas também 💚\n"
             "Usuário (Peppy): Me diga algo imprudente\n"
             "Ralsei: comer salgadinho antes da janta kkkk isso é muito arriscado :3\n"
-            "Usuário: sim, tanto é que acordei cansadin\n"
+            "Usuário (Peppy): sim, tanto é que acordei cansadin\n"
             "Ralsei: eita, dormiu pouco?\n"
-            "Usuário: Dormi bem\n"
+            "Usuário (Peppy): Dormi bem\n"
             "Ralsei: então por que tá cansado?\n"
-            "Usuário: não sei, deve ser o peso de ser chato/bonito/lindo/legal demais\n"
+            "Usuário (Peppy): não sei, deve ser o peso de ser chato/bonito/lindo/legal demais\n"
             "Ralsei: justo ksks\n"
-            "Usuário: se auto dê uma nota entre 1 a 10\n"
+            "Usuário (Peppy): se auto dê uma nota entre 1 a 10\n"
             "Ralsei: acho que uns 7\n"
-            "Usuário: Humilde\n"
+            "Usuário (Peppy): Humilde\n"
             "Ralsei: to sendo realista apenas\n"
             "Usuário (Peppy): qual a fórmula de bhaskara?\n"
             "Ralsei: oxi Peppy, querendo me testar a essa hora? kkkkk é x = (-b ± √(b² - 4ac)) / (2a) ✨ fácil fácil!\n\n"
@@ -94,22 +96,36 @@ class AIChatCog(commands.Cog):
             # 2. Remove a menção textual do próprio bot para não poluir o prompt
             conteudo_limpo = conteudo_limpo.replace(f"@{self.bot.user.display_name}", "").strip()
 
-            # 3. Se o texto ficou vazio (ex: a pessoa só marcou o bot), envia a mensagem padrão
-            if not conteudo_limpo:
+            # 3. Processa anexos de imagem se houver
+            imagem_part = None
+            if message.attachments:
+                anexo = message.attachments[0]
+                if any(anexo.filename.lower().endswith(ext) for ext in ['.png', '.jpg', '.jpeg', '.webp', '.gif']):
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(anexo.url) as resp:
+                            if resp.status == 200:
+                                bytes_imagem = await resp.read()
+                                imagem_part = types.Part.from_bytes(
+                                    data=bytes_imagem,
+                                    mime_type=anexo.content_type or "image/png"
+                                )
+
+            # 4. Se não houver texto nem imagem, envia a mensagem padrão de ajuda
+            if not conteudo_limpo and not imagem_part:
                 await message.channel.send(f"Olá, {message.author.display_name}! Precisa de ajuda com alguma coisa? :3 ✨")
                 return
 
             async with message.channel.typing():
-                try:
-                    channel_id = message.channel.id
+                channel_id = message.channel.id
 
+                try:
                     # Cria uma nova sessão de chat com histórico caso o canal ainda não tenha uma
                     if channel_id not in self.active_chats:
                         self.active_chats[channel_id] = self.client.chats.create(
-                            model="gemini-3.5-flash-lite",
+                            model="gemini-2.5-flash-lite",
                             config=types.GenerateContentConfig(
                                 system_instruction=self.system_instruction,
-                                temperature=0.85,
+                                temperature=0.7,
                                 top_p=0.9,
                                 max_output_tokens=300
                             )
@@ -117,21 +133,28 @@ class AIChatCog(commands.Cog):
 
                     chat_session = self.active_chats[channel_id]
 
-                    # Formata a entrada com o nome de quem falou para a IA saber quem é o usuário
-                    prompt_formatado = f"{message.author.display_name}: {conteudo_limpo}"
+                    # Monta a estrutura de entrada (Texto + Imagem se existir)
+                    prompt_input = []
+                    if conteudo_limpo:
+                        prompt_input.append(f"{message.author.display_name}: {conteudo_limpo}")
+                    else:
+                        prompt_input.append(f"{message.author.display_name}: [Enviou uma imagem]")
 
-                    # Envia a mensagem aproveitando o histórico da sessão
-                    response = chat_session.send_message(prompt_formatado)
+                    if imagem_part:
+                        prompt_input.append(imagem_part)
 
+                    # Envia para a API do Gemini
+                    response = chat_session.send_message(prompt_input)
+
+                    # Valida a resposta do modelo
                     resposta_texto = response.text.strip() if (response and response.text) else ""
 
                     if not resposta_texto:
-                        # Fallback seguro caso a IA não retorne texto
                         resposta_texto = "Poxa, fiquei pensado aqui e não soube o que dizer... :3 ✨"
 
-                    await message.reply(response.text, mention_author=False)
+                    # Responde usando o texto tratado
+                    await message.reply(resposta_texto, mention_author=False)
 
-                
                 except discord.errors.HTTPException as e:
                     print(f"[Erro Discord]: {e}")
                     await message.reply("Ops! Tentei enviar uma mensagem em branco sem querer... 💚", mention_author=False)
